@@ -9,6 +9,9 @@ import (
 	"strings"
 	"time"
 
+	courseLib "github.com/kaspar-p/bee/src/course"
+	userLib "github.com/kaspar-p/bee/src/user"
+
 	"github.com/apognu/gocal"
 	"github.com/bwmarrin/discordgo"
 )
@@ -76,10 +79,10 @@ func handleEnrolment(discord *discordgo.Session, message *discordgo.MessageCreat
 		fmt.Println(event);
 	}
 
-	AddUnknownCourses(events);
+	courseLib.AddUnknownCourses(events);
 	
 	// Create a user if they do not already exist
-	user := GetOrCreateUser(message.Author.ID, message.Author.Username);
+	user := userLib.GetOrCreateUser(message.Author.ID, message.Author.Username);
 	user.SetCourses(events);
 
 	// Finally, update the roles when a new user is added

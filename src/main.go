@@ -5,13 +5,13 @@ import (
 	"os"
 	"os/signal"
 
+	courseLib "github.com/kaspar-p/bee/src/course"
+	userLib "github.com/kaspar-p/bee/src/user"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/robfig/cron"
 	"github.com/spf13/viper"
 )
-
-var users map[string]*User;
-var courses map[string]*Course;
 
 
 var (
@@ -62,9 +62,8 @@ func configureViper() {
 }
 
 func init() {
-	users = make(map[string] *User);
-	courses = make(map[string] *Course);
-
+	courseLib.InitializeCourses();
+	userLib.InitializeUsers();
 	configureViper();
 }
 
@@ -89,12 +88,12 @@ func main() {
 	}
 
 	// Create and start the CRON job
-	c := cron.New();
-	c.AddFunc("0 * * * * *", func() {
+	cronScheduler := cron.New();
+	cronScheduler.AddFunc("1 * * * * *", func() {
 		fmt.Println("Updating roles!");
 		UpdateRoles(discord);
 	});
-	c.Start();
+	cronScheduler.Start();
 	
 	defer discord.Close();
 	stop := make(chan os.Signal, 1);

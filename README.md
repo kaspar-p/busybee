@@ -11,10 +11,10 @@ BOT:
   ACTIVE_SERVER: string   # One of <SERVER1> or <SERVER2>, etc.
   GUILD_IDS:
     <SERVER1>: string
-    <SERVER2: string
+    <SERVER2>: string
     ...
   CHANNEL_IDS:
     <SERVER1>: string
-    <SERVER2: string
+    <SERVER2>: string
     ...
 ```

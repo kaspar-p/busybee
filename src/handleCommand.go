@@ -79,9 +79,10 @@ func handleEnrolment(discord *discordgo.Session, message *discordgo.MessageCreat
 		fmt.Println(event);
 	}
 
+	// Update Courses from events
 	courseLib.AddUnknownCourses(events);
 	
-	// Create a user if they do not already exist
+	// Create a user if they do not already exist - overwrites BusyTimes
 	user := userLib.GetOrCreateUser(message.Author.ID, message.Author.Username);
 	user.SetCourses(events);
 

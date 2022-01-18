@@ -11,7 +11,6 @@ import (
 )
 
 func KeepRolesUpdatedWithCourses(discord *discordgo.Session) {
-
 	for courseCode, course := range courseLib.Courses {
 		if _, ok := GetRoleID(discord, courseCode); !ok {
 			// There was no role corresponding to the course - create one
@@ -86,23 +85,6 @@ func RemoveOtherCourseCodeRolesFromUser(discord *discordgo.Session, userID strin
 	}
 }
 
-func UpdateRoles(discord *discordgo.Session) {
-	DeleteExtraneousRoles(discord);
-	KeepRolesUpdatedWithCourses(discord);
-
-	fmt.Println("Updating roles with", len(userLib.Users), "users and", len(courseLib.Courses), "courses!");
-
-	// For each user with a userID in the `users` map, change their role for the current time
-	for userID, user := range userLib.Users {
-		fmt.Println("User", user.Name, "has", len(user.BusyTimes), "busy times!");
-
-		// Remove their course code roles
-		RemoveOtherCourseCodeRolesFromUser(discord, userID);
-		// Assign new roles
-		CheckForCurrentCourses(discord, user);
-	}
-}
-
 func CheckForCurrentCourses(discord *discordgo.Session, user *userLib.User) {
 	for _, busyTime := range user.BusyTimes {
 		now := time.Now();
@@ -124,5 +106,22 @@ func AssignCourseRoleToUser(discord *discordgo.Session, user *userLib.User, cour
 		if err != nil {
 			fmt.Println("Error adding role to user", user.UserID, ". Role has ID", roleID, " and course code: ", course.CourseCode, ". Error: ", err);
 		}
+	}
+}
+
+func UpdateRoles(discord *discordgo.Session) {
+	DeleteExtraneousRoles(discord);
+	KeepRolesUpdatedWithCourses(discord);
+
+	fmt.Println("Updating roles with", len(userLib.Users), "users and", len(courseLib.Courses), "courses!");
+
+	// For each user with a userID in the `users` map, change their role for the current time
+	for userID, user := range userLib.Users {
+		fmt.Println("User", user.Name, "has", len(user.BusyTimes), "busy times!");
+
+		// Remove their course code roles
+		RemoveOtherCourseCodeRolesFromUser(discord, userID);
+		// Assign new roles
+		CheckForCurrentCourses(discord, user);
 	}
 }

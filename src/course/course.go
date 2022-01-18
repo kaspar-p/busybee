@@ -36,7 +36,6 @@ func AddUnknownCourses(events []gocal.Event) {
 			// Add the unknown course to `courses` map
 			Courses[courseCode] = &decidedCourse;
 		}
-		
 	}
 }
 

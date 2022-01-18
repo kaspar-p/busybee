@@ -1,5 +1,5 @@
 # busybee
-A discord bot for determining who can get ramen with me. Ingests .ics files and adds roles to users depending on which class they are currently attending.
+A discord bot for determining who can get ramen with me. Ingests `.ics` files and adds roles to users depending on which class they are currently attending.
 
 ## Usage
 

@@ -15,15 +15,12 @@ import (
 type Database struct {
 	context context.Context
 	users *mongo.Collection
-	courses *mongo.Collection
 	busyTimes *mongo.Collection
 }
 
 var DatabaseInstance *Database;
 
 func Connect() (*mongo.Client, context.Context, context.CancelFunc) {
-	fmt.Println(constants.ConnectionURL);
-
 	clientOptions := options.Client().ApplyURI(constants.ConnectionURL);
 	context, cancel := context.WithTimeout(context.Background(), 10 * time.Hour);
 	
@@ -42,7 +39,6 @@ func InitializeDatabase() context.CancelFunc {
 	DatabaseInstance = &Database{
 		context: context,
 		users: client.Database(constants.DatabaseName).Collection(constants.UsersCollectionName),
-		courses: client.Database(constants.DatabaseName).Collection(constants.CoursesCollectionName),
 		busyTimes: client.Database(constants.DatabaseName).Collection(constants.BusyTimesCollectionName),
 	};
 

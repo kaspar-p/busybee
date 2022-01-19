@@ -1,4 +1,4 @@
-package user
+package entities
 
 import (
 	"time"
@@ -8,24 +8,27 @@ import (
 
 type BusyTime struct {
 	OwnerID string
-	CourseCode string
+	BelongsTo string
+	Title string
 	Start time.Time
 	End time.Time
 }
 
-func CreateBusyTime(ownerID string, CourseCode string, start time.Time, end time.Time) BusyTime {
+func CreateBusyTime(ownerID string, guildID string, title string, start time.Time, end time.Time) BusyTime {
 	return BusyTime{
+		BelongsTo: guildID,
 		OwnerID: ownerID,
-		CourseCode: CourseCode,
+		Title: title,
 		Start: start,
 		End: end,
 	}
 }
 
-func (busyTime *BusyTime) ConvertBusyTimeToBsonD() bson.D {
+func (busyTime *BusyTime) ConvertBusyTimeToDocument() bson.D {
 	return bson.D {
+		{ Key: "BelongsTo", Value: busyTime.BelongsTo },
 		{ Key: "OwnerID", Value: busyTime.OwnerID },
-		{ Key: "CourseCode", Value: busyTime.CourseCode },
+		{ Key: "Title", Value: busyTime.Title },
 		{ Key: "Start", Value: busyTime.Start },
 		{ Key: "End", Value: busyTime.End },
 	}

@@ -66,33 +66,3 @@ type UpdateBusyTimeError struct{
 func (ubtErr *UpdateBusyTimeError) UBTError() string {
 	return "Updating a user failed. Please try again. Error: " + ubtErr.Err.Error()
 }
-
-// COURSE ERRORS
-
-type RemoveCourseError struct {
-	Err error
-}
-func (rcErr *RemoveCourseError) RCError() string {
-	return "Removing a course failed. Please try again. Error: " + rcErr.Err.Error()
-}
-
-type UpdateCourseError struct {
-	Err error
-}
-func (ucErr *UpdateCourseError) UCError() string {
-	return "Updating a course failed. Please try again. Error: " + ucErr.Err.Error()
-}
-
-type GetCourseError struct {
-	Err error
-}
-func (gcErr *GetCourseError) GCError() string {
-	return "Getting a course failed. PLease try again. Error: " + gcErr.Err.Error()
-}
-
-type AddCourseError struct {
-	Err error
-}
-func (acErr *AddCourseError) ACError() string {
-	return "Adding a course failed. Please try again. Error: " + acErr.Err.Error()
-}

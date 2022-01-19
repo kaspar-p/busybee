@@ -9,9 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kaspar-p/bee/src/constants"
+	"github.com/kaspar-p/bee/src/entities"
 	"github.com/kaspar-p/bee/src/ingest"
-	usersLib "github.com/kaspar-p/bee/src/users"
 
 	"github.com/apognu/gocal"
 	"github.com/bwmarrin/discordgo"
@@ -27,10 +26,6 @@ import (
 
 func handleCommand(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	fmt.Println("Seen message: ", message.Content);
-	if message.ChannelID != constants.ChannelID {
-		return;
-	}
-
 	for key, handler := range commandHandlers {
 		if strings.HasPrefix(message.Content, "." + key) {
 			fmt.Println("Executing handler for message: ", key);
@@ -53,14 +48,14 @@ func createRandomString() string {
 
 func handleEnrolment(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	if len(message.Attachments) != 1 {
-		discord.ChannelMessageSend(constants.ChannelID, "Requires exactly 1 .ics file to be attached!");
+		discord.ChannelMessageSend(message.ChannelID, "Requires exactly 1 `.ics` file to be attached!");
 		return;
 	}
 
 	// Validate that it is a .ics file
 	file := message.Attachments[0];
 	if !strings.HasSuffix(file.Filename, ".ics") {
-		discord.ChannelMessageSend(constants.ChannelID, "Requires the file to be in .ics format!");
+		discord.ChannelMessageSend(message.ChannelID, "Requires the file to be in `.ics` format!");
 	}
 
 	// Download the .ics file
@@ -72,41 +67,73 @@ func handleEnrolment(discord *discordgo.Session, message *discordgo.MessageCreat
 
 	// Parse the .ics file into its events
 	events, err := parseCalendar(filepath);
-	if err != nil {
-		fmt.Println("Error encountered while parsing .ics file: ", err);
+	if errorMessage, ok := validateCalendarFile(events, err); !ok {
+		discord.ChannelMessageSend(message.ChannelID, errorMessage);
 		return;
 	}
 
 	fmt.Println("Going to ingest", len(events), "events!");
 
-	// Create new courses and create new users
+	// Create new users and their events
 	ingest.IngestNewData(message, events);
 
 	// Finally, update the roles when a new user is added
-	UpdateRoles(discord);
+	UpdateRoles(discord, message.GuildID);
+
+	discord.ChannelMessageSend(message.ChannelID, "you're enrolled \\:)")
+}
+
+func validateCalendarFile(events []gocal.Event, err error) (message string, ok bool) {
+	if err != nil || len(events) == 0 {
+		fmt.Println("Error encountered while parsing .ics file: ", err);
+		return "Error parsing corrupt `.ics` file. No events were found \\:(", false;
+	}
+
+	// Check that all events have nonempty titles
+	for _, event := range events {
+		if len(event.Summary) == 0 {
+			fmt.Println("Error encountered while parsing .ics file. Empty titles on some events");
+			return "Error encountered while parsing .ics file. Some event's have empty titles. This is not (!) allowed \\:(", false;
+		} else {
+			fmt.Println("event had summary:", event.Summary);
+		}
+	}
+
+	return "", true
 }
 
 func handleWhoBusy(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	busyUsers := make(map[string]string);
-	for _, user := range usersLib.Users {
+	for _, user := range entities.Users[message.GuildID] {
 		if user.CurrentlyBusy.IsBusy {
 			busyUsers[user.Name] = user.CurrentlyBusy.BusyWith;
 		}
 	}
 
 	resultString := ""
-	for name, courseCode := range busyUsers {
-		resultString = resultString + name + " is mad busy with " + courseCode + ".\n";
+	for name, title := range busyUsers {
+		resultString = resultString + name + " is mad busy with " + title + ".\n";
 	}
 	if resultString == "" {
-		discord.ChannelMessageSend(constants.ChannelID, "No one busy \\:)");
+		discord.ChannelMessageSend(message.ChannelID, "no one busy \\:)");
 	} else {
-		discord.ChannelMessageSend(constants.ChannelID, resultString);
+		discord.ChannelMessageSend(message.ChannelID, resultString);
 	}
 }
 
 func botIsReady(discord *discordgo.Session, isReady *discordgo.Ready) { 
 	fmt.Println("Bot successfully connected! Press CMD + C at any time to exit.");
+
+	// Populate the ServerRoleIDMap
+	for _, guild := range isReady.Guilds {
+		// Get the roleID of the busy role
+		KeepRolesUpdated(discord, guild.ID);
+
+		// Populate the second level of the Users map
+		entities.Users[guild.ID] = make(map[string]*entities.User);
+	}
+	fmt.Println("Populated role ID map from", len(isReady.Guilds), "guilds!");
+
 	// SLASH COMMAND CODE
 	// clearAndRegisterCommands(discord);
 }
@@ -246,7 +273,7 @@ func downloadFile(URL string) (string, error) {
 // 	discord.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 // 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 // 		Data: &discordgo.InteractionResponseData{
-// 			Content: "Successfully added your course information. Thanks for using busy bee!",
+// 			Content: "added your event information. thanks for using busybee :)",
 // 		},
 // 	})
 // }

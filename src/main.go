@@ -6,10 +6,9 @@ import (
 	"os/signal"
 
 	"github.com/kaspar-p/bee/src/constants"
-	courseLib "github.com/kaspar-p/bee/src/course"
 	"github.com/kaspar-p/bee/src/database"
+	"github.com/kaspar-p/bee/src/entities"
 	"github.com/kaspar-p/bee/src/ingest"
-	usersLib "github.com/kaspar-p/bee/src/users"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/robfig/cron"
@@ -21,7 +20,7 @@ var (
 	// commands = []*discordgo.ApplicationCommand {
 	// 	{
 	// 		Name: "register",
-	// 		Description: "Add .ics calendar to register courses with the bot. Be sure to attach a .ics file to this message!",
+	// 		Description: "Add .ics calendar to register events with the bot. Be sure to attach a .ics file to this message!",
 	// 		Type: discordgo.ChatApplicationCommand,
 	// 	},
 		
@@ -37,12 +36,10 @@ var (
 	}
 )
 
-
-
 func init() {
 	constants.InitializeViper();
-	courseLib.InitializeCourses();
-	usersLib.InitializeUsers();
+	entities.InitializeUsers();
+	ServerRoleIDMap = make(map[string]string);
 }
 
 func main() {
@@ -74,7 +71,11 @@ func main() {
 	cronScheduler := cron.New();
 	cronScheduler.AddFunc("1 * * * * *", func() {
 		fmt.Println("\nUpdating roles!");
-		UpdateRoles(discord);
+		for guildID := range ServerRoleIDMap {
+			fmt.Println("Updating roles for guild with id:", guildID);
+			UpdateRoles(discord, guildID);
+		}
+		fmt.Println("Done updating roles!");
 	});
 	cronScheduler.Start();
 	

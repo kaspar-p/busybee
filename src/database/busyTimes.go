@@ -3,29 +3,37 @@ package database
 import (
 	"fmt"
 
-	usersLib "github.com/kaspar-p/bee/src/users"
+	"github.com/kaspar-p/bee/src/entities"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func CreateBusyTimesDocuments(busyTimes []*usersLib.BusyTime) []interface{} {
+func CreateBusyTimesDocuments(busyTimes []*entities.BusyTime) []interface{} {
 	busyTimesDocuments := make([]interface{}, len(busyTimes));
 	for index, busyTime := range busyTimes {
-		busyTimesDocuments[index] = busyTime.ConvertBusyTimeToBsonD();
+		busyTimesDocuments[index] = busyTime.ConvertBusyTimeToDocument();
 	}
 	return busyTimesDocuments;
 }
 
-func (database *Database) OverwriteUserBusyTimes(userID string, busyTimes []*usersLib.BusyTime) {
+func (database *Database) OverwriteUserBusyTimes(ID string, busyTimes []*entities.BusyTime) {
+	fmt.Println("Overwriting user with ID", ID, "busy times with " + fmt.Sprint(len(busyTimes)) + " busy times.")
+	
 	// Delete all of the busy times associated with that user
-	filter := bson.D{{ Key: "OwnerID" , Value: userID }};
-	database.busyTimes.DeleteMany(database.context, filter);
+	filter := bson.D{{ Key: "OwnerID" , Value: ID }};
+	deleteResult, err := database.busyTimes.DeleteMany(database.context, filter);
+	if err != nil {
+		fmt.Println("Error while deleting busy times tied to user with ID:", ID);
+		return;
+	}
+	fmt.Println("Found and deleted", deleteResult.DeletedCount, "events tied to user with ID: ", ID);
 
 	// Add the new busy times
-	database.AddBusyTimes(userID, busyTimes)
+	database.AddBusyTimes(ID, busyTimes)
 }
 
-func (database *Database) AddBusyTimes(ownerID string, busyTimes []*usersLib.BusyTime) {
+func (database *Database) AddBusyTimes(ownerID string, busyTimes []*entities.BusyTime) {
 	if database == nil {
 		panic(&DatabaseUninitializedError{})
 	}
@@ -35,36 +43,34 @@ func (database *Database) AddBusyTimes(ownerID string, busyTimes []*usersLib.Bus
 	_, err := database.busyTimes.InsertMany(database.context, busyTimesDocuments);
 	if err != nil {
 		fmt.Println("Error inserting busy times: ", busyTimesDocuments, ". Error: ", err)
-		panic(&AddCourseError{Err: err})
+		panic(&AddBusyTimeError{Err: err})
 	}
 }
 
-func (database *Database) GetBusyTimes() []*usersLib.BusyTime {
+func (database *Database) GetBusyTimes() []*entities.BusyTime {
 	cursor, err := database.busyTimes.Find(database.context, bson.D {{ }});
 	if err != nil {
 		fmt.Println("Error getting cursor when finding all busyTimes objects. Error: ", err);
-		panic(&GetCourseError{ Err: err });
+		panic(&GetBusyTimeError{ Err: err });
 	}
 
 	var results []bson.M
 	if err = cursor.All(database.context, &results); err != nil {
 		fmt.Println("Error getting results from cursor when getting all busyTimes objects. Error: ", err);
-		panic(&GetCourseError{ Err: err });
+		panic(&GetBusyTimeError{ Err: err });
 	}
 	
 	// Create BusyTime's out of the results
-	busyTimesArray := make([]*usersLib.BusyTime, 0);
+	busyTimesArray := make([]*entities.BusyTime, 0);
 	for _, result := range results {
+		guildID := result["BelongsTo"].(string);
 		ownerID := result["OwnerID"].(string);
-		// Filter data out of [courseCode, start, end] array
-		courseCode := result["CourseCode"].(string);
-		
-		// Parse times
+		title := result["Title"].(string);
 		start := (result["Start"].(primitive.DateTime)).Time();
 		end := (result["End"].(primitive.DateTime)).Time();
 		
 		// Create new busyTime
-		newBusyTime := usersLib.CreateBusyTime(ownerID, courseCode, start, end);
+		newBusyTime := entities.CreateBusyTime(ownerID, guildID, title, start, end);
 
 		// Assign new busyTime to array corresponding to ONE user
 		busyTimesArray = append(busyTimesArray, &newBusyTime);

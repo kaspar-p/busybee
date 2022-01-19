@@ -9,8 +9,9 @@ import (
 	"strings"
 	"time"
 
-	courseLib "github.com/kaspar-p/bee/src/course"
-	userLib "github.com/kaspar-p/bee/src/user"
+	"github.com/kaspar-p/bee/src/constants"
+	"github.com/kaspar-p/bee/src/ingest"
+	usersLib "github.com/kaspar-p/bee/src/users"
 
 	"github.com/apognu/gocal"
 	"github.com/bwmarrin/discordgo"
@@ -25,12 +26,14 @@ import (
 // }
 
 func handleCommand(discord *discordgo.Session, message *discordgo.MessageCreate) {
-	if message.ChannelID != ChannelID {
+	fmt.Println("Seen message: ", message.Content);
+	if message.ChannelID != constants.ChannelID {
 		return;
 	}
 
 	for key, handler := range commandHandlers {
 		if strings.HasPrefix(message.Content, "." + key) {
+			fmt.Println("Executing handler for message: ", key);
 			handler(discord, message);
 		}
 	}
@@ -50,14 +53,14 @@ func createRandomString() string {
 
 func handleEnrolment(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	if len(message.Attachments) != 1 {
-		discord.ChannelMessageSend(ChannelID, "Requires exactly 1 .ics file to be attached!");
+		discord.ChannelMessageSend(constants.ChannelID, "Requires exactly 1 .ics file to be attached!");
 		return;
 	}
 
 	// Validate that it is a .ics file
 	file := message.Attachments[0];
 	if !strings.HasSuffix(file.Filename, ".ics") {
-		discord.ChannelMessageSend(ChannelID, "Requires the file to be in .ics format!");
+		discord.ChannelMessageSend(constants.ChannelID, "Requires the file to be in .ics format!");
 	}
 
 	// Download the .ics file
@@ -74,20 +77,32 @@ func handleEnrolment(discord *discordgo.Session, message *discordgo.MessageCreat
 		return;
 	}
 
-	fmt.Println("Found events (" + fmt.Sprint((len(events))) + "): ");
-	for _, event := range events {
-		fmt.Println(event);
-	}
+	fmt.Println("Going to ingest", len(events), "events!");
 
-	// Update Courses from events
-	courseLib.AddUnknownCourses(events);
-	
-	// Create a user if they do not already exist - overwrites BusyTimes
-	user := userLib.GetOrCreateUser(message.Author.ID, message.Author.Username);
-	user.SetCourses(events);
+	// Create new courses and create new users
+	ingest.IngestNewData(message, events);
 
 	// Finally, update the roles when a new user is added
 	UpdateRoles(discord);
+}
+
+func handleWhoBusy(discord *discordgo.Session, message *discordgo.MessageCreate) {
+	busyUsers := make(map[string]string);
+	for _, user := range usersLib.Users {
+		if user.CurrentlyBusy.IsBusy {
+			busyUsers[user.Name] = user.CurrentlyBusy.BusyWith;
+		}
+	}
+
+	resultString := ""
+	for name, courseCode := range busyUsers {
+		resultString = resultString + name + " is mad busy with " + courseCode + ".\n";
+	}
+	if resultString == "" {
+		discord.ChannelMessageSend(constants.ChannelID, "No one busy \\:)");
+	} else {
+		discord.ChannelMessageSend(constants.ChannelID, resultString);
+	}
 }
 
 func botIsReady(discord *discordgo.Session, isReady *discordgo.Ready) { 

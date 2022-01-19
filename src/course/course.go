@@ -1,12 +1,7 @@
 package course
 
 import (
-	"fmt"
 	"strings"
-
-	"github.com/kaspar-p/bee/src/lib"
-
-	"github.com/apognu/gocal"
 )
 
 var Courses map[string] *Course
@@ -20,23 +15,13 @@ func InitializeCourses() {
 	Courses = make(map[string] *Course);
 }
 
-func AddUnknownCourses(events []gocal.Event) {
-	for _, event := range events {
-		courseCode := ParseCourseCode(event.Summary);
-
-		var decidedCourse Course;
-		// If the course was already in the map - use the existing one. If not, create a new one.
-		if _, ok := Courses[courseCode]; !ok {
-			fmt.Println("Creating new course with code: ", courseCode);
-			// Create a new course
-			decidedCourse = Course{
-				CourseCode: courseCode,
-				CourseColor: lib.ChooseRandomColor(),
-			}
-			// Add the unknown course to `courses` map
-			Courses[courseCode] = &decidedCourse;
-		}
+func CreateCourse(courseCode string, courseColor int) *Course {
+	course := Course {
+		CourseCode: courseCode,
+		CourseColor: courseColor,
 	}
+
+	return &course;
 }
 
 func ParseCourseCode(summary string) string {

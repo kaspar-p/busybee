@@ -5,20 +5,14 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/kaspar-p/bee/src/constants"
 	courseLib "github.com/kaspar-p/bee/src/course"
-	userLib "github.com/kaspar-p/bee/src/user"
+	"github.com/kaspar-p/bee/src/database"
+	"github.com/kaspar-p/bee/src/ingest"
+	usersLib "github.com/kaspar-p/bee/src/users"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/robfig/cron"
-	"github.com/spf13/viper"
-)
-
-
-var (
-	GuildID string
-	ChannelID string
-	BotToken string
-	AppID string
 )
 
 var (
@@ -39,37 +33,21 @@ var (
 
 	commandHandlers = map[string]func(s * discordgo.Session, i *discordgo.MessageCreate) {
 		"enrol": handleEnrolment,
+		"whobusy": handleWhoBusy,
 	}
 )
 
-func configureViper() {
-	viper.SetConfigName("env");
-	viper.AddConfigPath(".");
-	viper.AutomaticEnv();
-	viper.SetConfigType("yml");
 
-	err := viper.ReadInConfig();
-	if err != nil {
-		fmt.Println("Error reading from environment variables file: ", err);
-	}
-
-	// Get environment variables
-	BotToken = viper.GetString("BOT.TOKEN");
-	activeServer := viper.GetString("BOT.ACTIVE_SERVER");
-	GuildID = viper.GetString("BOT.GUILD_IDS." + activeServer);
-	ChannelID = viper.GetString("BOT.CHANNEL_IDS." + activeServer);
-	AppID = viper.GetString("BOT.APP_ID");
-}
 
 func init() {
+	constants.InitializeViper();
 	courseLib.InitializeCourses();
-	userLib.InitializeUsers();
-	configureViper();
+	usersLib.InitializeUsers();
 }
 
 func main() {
 	// Initialize the bot
-	discord, err := discordgo.New("Bot " + BotToken);
+	discord, err := discordgo.New("Bot " + constants.BotToken);
 	if (err != nil) {
 		fmt.Println("Error creating discord session: ", err);
 		return;
@@ -87,10 +65,15 @@ func main() {
 		return;
 	}
 
+	// Connect to the database
+	cancel := database.InitializeDatabase();
+	ingest.FillMapsWithDatabaseData();
+	defer cancel();
+	
 	// Create and start the CRON job
 	cronScheduler := cron.New();
 	cronScheduler.AddFunc("1 * * * * *", func() {
-		fmt.Println("Updating roles!");
+		fmt.Println("\nUpdating roles!");
 		UpdateRoles(discord);
 	});
 	cronScheduler.Start();

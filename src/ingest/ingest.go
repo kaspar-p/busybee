@@ -63,5 +63,5 @@ func OverwriteUserEvents(user *entities.User, events []gocal.Event) {
 	}
 
 	// Overwrite the busyTimes in the database
-	dbLib.DatabaseInstance.OverwriteUserBusyTimes(user.ID, user.BusyTimes);
+	dbLib.DatabaseInstance.OverwriteUserBusyTimes(user, user.BusyTimes);
 }

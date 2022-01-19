@@ -33,6 +33,7 @@ var (
 	commandHandlers = map[string]func(s * discordgo.Session, i *discordgo.MessageCreate) {
 		"enrol": handleEnrolment,
 		"whobusy": handleWhoBusy,
+		"wyd": handleFree,
 	}
 )
 

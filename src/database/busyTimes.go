@@ -17,23 +17,26 @@ func CreateBusyTimesDocuments(busyTimes []*entities.BusyTime) []interface{} {
 	return busyTimesDocuments;
 }
 
-func (database *Database) OverwriteUserBusyTimes(ID string, busyTimes []*entities.BusyTime) {
-	fmt.Println("Overwriting user with ID", ID, "busy times with " + fmt.Sprint(len(busyTimes)) + " busy times.")
+func (database *Database) OverwriteUserBusyTimes(user *entities.User, busyTimes []*entities.BusyTime) {
+	fmt.Println("Overwriting user", user.Name, "busy times with " + fmt.Sprint(len(busyTimes)) + " busy times.")
 	
 	// Delete all of the busy times associated with that user
-	filter := bson.D{{ Key: "OwnerID" , Value: ID }};
+	filter := bson.D{
+		{ Key: "OwnerID" , Value: user.ID },
+		{ Key: "BelongsTo", Value: user.BelongsTo },
+	};
 	deleteResult, err := database.busyTimes.DeleteMany(database.context, filter);
 	if err != nil {
-		fmt.Println("Error while deleting busy times tied to user with ID:", ID);
+		fmt.Println("Error while deleting busy times tied to user", user.Name);
 		return;
 	}
-	fmt.Println("Found and deleted", deleteResult.DeletedCount, "events tied to user with ID: ", ID);
+	fmt.Println("Found and deleted", deleteResult.DeletedCount, "events tied to user", user.Name);
 
 	// Add the new busy times
-	database.AddBusyTimes(ID, busyTimes)
+	database.AddBusyTimes(busyTimes)
 }
 
-func (database *Database) AddBusyTimes(ownerID string, busyTimes []*entities.BusyTime) {
+func (database *Database) AddBusyTimes(busyTimes []*entities.BusyTime) {
 	if database == nil {
 		panic(&DatabaseUninitializedError{})
 	}

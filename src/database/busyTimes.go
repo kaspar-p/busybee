@@ -79,7 +79,5 @@ func (database *Database) GetBusyTimes() []*entities.BusyTime {
 		busyTimesArray = append(busyTimesArray, &newBusyTime);
 	}
 
-	fmt.Println("Gotten", len(busyTimesArray), "total busy times (events) from database!");
-
 	return busyTimesArray;
 }

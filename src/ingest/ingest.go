@@ -23,6 +23,8 @@ func FillMapsWithDatabaseData() {
 		user := entities.Users[busyTime.BelongsTo][busyTime.OwnerID];
 		user.BusyTimes = append(user.BusyTimes, busyTime);
 	}
+
+	fmt.Println("Got data: \n\tUsers:", len(users), "\n\tEvents:", len(busyTimesArray));
 }
 
 func IngestNewData(message *discordgo.MessageCreate, events []gocal.Event) {
@@ -56,8 +58,6 @@ func OverwriteUserEvents(user *entities.User, events []gocal.Event) {
 	user.BusyTimes = make([]*entities.BusyTime, 0);
 	for _, event := range events {
 		title := ParseEventTitle(event.Summary);
-
-		fmt.Println("Adding event", title, "to user " + user.Name, ". It starts at:", *event.Start, "and ends at", *event.End);
 		busyTime := entities.CreateBusyTime(user.ID, user.BelongsTo, title, *event.Start, *event.End);
 		user.BusyTimes = append(user.BusyTimes, &busyTime);
 	}

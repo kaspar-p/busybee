@@ -50,7 +50,6 @@ func (database *Database) GetUsers() []*entities.User {
 
 		users = append(users, user);
 	}
-	fmt.Println("Gotten", len(users), "users from database!");
 
 	return users;
 }

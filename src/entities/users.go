@@ -118,6 +118,12 @@ func (user *User) IsBusyBetween(t1 time.Time, t2 time.Time) bool {
 	return false;
 }
 
+func (user *User) SortBusyTimes() {
+	// Sort them by their start times
+	sort.Slice(user.BusyTimes, func(i, j int) bool {
+		return user.BusyTimes[i].Start.Before(user.BusyTimes[j].Start);
+	})
+}
 
 func (user *User) ConvertUserToDocument() bson.D {
 	return bson.D { 

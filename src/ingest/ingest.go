@@ -24,6 +24,10 @@ func FillMapsWithDatabaseData() {
 		user.BusyTimes = append(user.BusyTimes, busyTime);
 	}
 
+	for _, user := range users {
+		user.SortBusyTimes();
+	}
+
 	fmt.Println("Got data: \n\tUsers:", len(users), "\n\tEvents:", len(busyTimesArray));
 }
 
@@ -61,6 +65,8 @@ func OverwriteUserEvents(user *entities.User, events []gocal.Event) {
 		busyTime := entities.CreateBusyTime(user.ID, user.BelongsTo, title, *event.Start, *event.End);
 		user.BusyTimes = append(user.BusyTimes, &busyTime);
 	}
+
+	user.SortBusyTimes();
 
 	// Overwrite the busyTimes in the database
 	dbLib.DatabaseInstance.OverwriteUserBusyTimes(user, user.BusyTimes);

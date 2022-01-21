@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -22,11 +23,23 @@ func validateStructure(message *discordgo.MessageCreate) string {
 }
 
 func getNextFreeIntervalOfSize(user *entities.User, startingAt time.Time, numberOfHours int) (time.Time, bool) {
-	for i := 0; i < len(user.BusyTimes) - 1; i++ {
-		if user.BusyTimes[i].Start.After(startingAt) {
-			nextInterval := user.BusyTimes[i + 1].Start.Sub(user.BusyTimes[i].End);
-			if int(nextInterval.Hours()) >= numberOfHours {
-				return user.BusyTimes[i].End, true;
+	for i := 1; i < len(user.BusyTimes); i++ {
+		currentBusyTime := user.BusyTimes[i];
+		
+		if currentBusyTime.Start.After(startingAt) {
+			previousBusyTime := user.BusyTimes[i-1];
+			
+			var intervalLength int;
+			if previousBusyTime.End.Before(startingAt) {
+				// If we are currently in the interval, only use the interval of [startingAt, currentBusyTime.Start]
+				intervalLength = int(math.Floor(currentBusyTime.Start.Sub(startingAt).Hours()));
+			} else {
+				// If we are NOT currently in the interval, use the whole interval [previousBusyTime.End, currentBusyTime.Start]
+				intervalLength = int(math.Floor(currentBusyTime.Start.Sub(previousBusyTime.End).Hours()));
+			}
+			
+			if intervalLength >= numberOfHours {
+				return previousBusyTime.End, true;
 			}
 		}
 	}
@@ -84,6 +97,10 @@ func getNextCommonFreeNumberOfHoursMany(users []*entities.User, numberOfHours in
 	var latestFreeCommonTime time.Time;
 	set := false;
 
+	if len(users) == 1 {
+		return getNextFreeIntervalOfSize(users[0], time.Now(), numberOfHours);
+	}
+
 	for i := 0; i < len(users) - 1; i++ {
 		for j := i+1; j < len(users); j++ {
 			userI := users[i];
@@ -106,7 +123,7 @@ func getNextCommonFreeNumberOfHoursMany(users []*entities.User, numberOfHours in
 
 
 func toNiceDateTimeString(eventTime time.Time) string {
-	return eventTime.Format("3:04 PM 01/02");
+	return eventTime.Format("03:04 PM 01/02");
 }
 
 func HandleWhenFree(discord *discordgo.Session, message *discordgo.MessageCreate) {
@@ -129,8 +146,6 @@ func HandleWhenFree(discord *discordgo.Session, message *discordgo.MessageCreate
 		}
 	}
 
-	fmt.Println("Got users: ", mentionedUsers);
-
 	resultString := "```\n"
 	resultString += "+--------------------------+\n";
 	for hour := 1; hour < 7; hour++ {
@@ -144,7 +159,7 @@ func HandleWhenFree(discord *discordgo.Session, message *discordgo.MessageCreate
 		}
 
 		if !found {
-			resultString += fmt.Sprintf("| %d %s | %s |\n", hour, hourText, "      NONE    ");
+			resultString += fmt.Sprintf("| %d %s | %s |\n", hour, hourText, "    NONE \\:(   ");
 		} else {
 			resultString += fmt.Sprintf("| %d %s | %s |\n", hour, hourText, toNiceDateTimeString(nextCommonFreeTimeWithHour));
 		}

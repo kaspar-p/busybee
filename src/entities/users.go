@@ -1,6 +1,8 @@
 package entities
 
 import (
+	"fmt"
+	"sort"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -49,6 +51,31 @@ func (user *User) IsBusy(t time.Time) bool {
 	}
 
 	return false;
+}
+
+func (user *User) GetTodaysEvents() []*BusyTime {
+	year, month, day := time.Now().Date();
+	beginningOfDay := time.Date(year, month, day, 0, 0, 0, 0, time.Local);
+	endOfDay := time.Date(year, month, day, 23, 59, 59, 0, time.Local);
+
+	todaysEvents := make([]*BusyTime, 0);
+	for _, busyTime := range user.BusyTimes {
+		if 	busyTime.Start.After(beginningOfDay) &&
+			busyTime.End.Before(endOfDay) &&
+			busyTime.End.After(time.Now()) {
+				fmt.Println("Adding event", busyTime.Title, "starting at:", busyTime.Start, "and ending at:", busyTime.End);
+				todaysEvents = append(todaysEvents, busyTime);
+		}
+	}
+
+	// Sort them by start time
+	sort.Slice(todaysEvents, func(i, j int) bool {
+		return todaysEvents[i].Start.Unix() < todaysEvents[j].Start.Unix()
+	})
+
+	fmt.Println("Today's events for user", user.Name, "are:", todaysEvents);
+
+	return todaysEvents;
 }
 
 func (user *User) GetLatestEndTime() time.Time {

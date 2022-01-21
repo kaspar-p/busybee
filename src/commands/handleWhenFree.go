@@ -7,8 +7,14 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/kaspar-p/bee/src/constants"
 	"github.com/kaspar-p/bee/src/entities"
 )
+
+type TimePair struct {
+	Hour int
+	TimeText string;
+}
 
 func validateStructure(message *discordgo.MessageCreate) string {
 	if (len(message.Mentions) != len(strings.Split(message.Content, " ")) - 1) {
@@ -126,12 +132,12 @@ func toNiceDateTimeString(eventTime time.Time) string {
 	return eventTime.Format("03:04 PM 01/02");
 }
 
-func HandleWhenFree(discord *discordgo.Session, message *discordgo.MessageCreate) {
+func HandleWhenFree(discord *discordgo.Session, message *discordgo.MessageCreate) error {
 	errorMessage := validateStructure(message)
 	if errorMessage != "" {
 		fmt.Println("Command .whenFree error with message:", errorMessage);
 		discord.ChannelMessageSend(message.ChannelID, errorMessage);
-		return
+		return nil;
 	}
 
 	// Convert mentions into 'User's
@@ -142,42 +148,54 @@ func HandleWhenFree(discord *discordgo.Session, message *discordgo.MessageCreate
 			mentionedUsers = append(mentionedUsers, user);
 		} else {
 			discord.ChannelMessageSend(message.ChannelID, "the @ mentioned user `" + mentionedUser.Username + "` isn't in the system. ask them to enrol pls \\:)");
-			return;
+			return nil;
 		}
 	}
 
-	resultString := "```\n"
-	resultString += "+--------------------------+\n";
-	maxHours := 12;
+	maxHours := 6;
 
-	type TimePair struct {
-		Time time.Time
-		Found bool
-	}
-
-	hourTimesMap := make(map[int]TimePair);
+	timePairs := make([]TimePair, maxHours);
 	for hour := 1; hour < maxHours+1; hour++ {
-		t, found := getNextCommonFreeNumberOfHoursMany(mentionedUsers, hour);
-		if found {
-			hourTimesMap[hour] = TimePair{t, found};
-		}
-	}
-
-	for hour, timePair := range hourTimesMap {
-		var hourText string;
-		if hour == 1 {
-			hourText = "hour ";
+		timeFound, found := getNextCommonFreeNumberOfHoursMany(mentionedUsers, hour);
+	
+		var timeText string;
+		if !found {
+			timeText = "NONE \\:(";
 		} else {
-			hourText = "hours";
+			timeText = toNiceDateTimeString(timeFound);
 		}
 
-		if !timePair.Found {
-			resultString += fmt.Sprintf("| %d %s | %s |\n", hour, hourText, "    NONE \\:(   ");
-		} else {
-			resultString += fmt.Sprintf("| %d %s | %s |\n", hour, hourText, toNiceDateTimeString(timePair.Time));
+		timePairs[hour - 1] = TimePair{
+			Hour: hour,
+			TimeText: timeText,
 		}
 	}
-	resultString += "+--------------------------+\n";
-	resultString += "```\n";
-	discord.ChannelMessageSend(message.ChannelID, resultString);
+	
+	embed := GenerateTableEmbed(timePairs)
+	_, err := discord.ChannelMessageSendEmbed(message.ChannelID, embed);
+
+	return err;
+}
+
+func GenerateTableEmbed(timePairs []TimePair) *discordgo.MessageEmbed {
+	descString := "```";
+	for _, pair := range timePairs {
+		hourText := "s"
+		spaceText := ""
+		if pair.Hour == 1 {
+			hourText = ""
+			spaceText = " "
+		}
+		
+		descString += fmt.Sprintf("%d hour%s:%s %s\n", pair.Hour, hourText, spaceText, pair.TimeText);
+	}
+	descString += "```";
+
+	embed := discordgo.MessageEmbed{
+		Type: "rich",
+		Title: "hours fwee \\:)",
+		Description: descString,
+		Color: constants.BeeColor,
+	}
+	return &embed;
 }

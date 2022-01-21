@@ -7,6 +7,8 @@ import (
 )
 
 var (
+	BeeColor int
+
 	BusyRoleID string
 	BusyRoleName string
 	BotToken string
@@ -27,6 +29,9 @@ func InitializeViper() {
 	if err != nil {
 		fmt.Println("Error reading from environment variables file: ", err);
 	}
+
+	// Set constants not dependent on Viper
+	BeeColor = 15122779; // Yellow
 
 	// Get environment variables
 	BotToken = viper.GetString("BOT.TOKEN");

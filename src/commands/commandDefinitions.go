@@ -18,7 +18,7 @@ var (
 	// 	"register": handleEnrolment,
 	// }
 
-	commandHandlers = map[string]func(s * discordgo.Session, i *discordgo.MessageCreate) {
+	commandHandlers = map[string]func(s * discordgo.Session, i *discordgo.MessageCreate) error {
 		"enrol": HandleEnrol,
 		"whobusy": HandleWhoBusy,
 		"wyd": HandleWyd,

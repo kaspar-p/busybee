@@ -21,7 +21,7 @@ func sortKeysOfMap(unsortedMap map[string]string) []string {
 	return keys;
 }
 
-func HandleWhoBusy(discord *discordgo.Session, message *discordgo.MessageCreate) {
+func HandleWhoBusy(discord *discordgo.Session, message *discordgo.MessageCreate) error {
 	busyUsers := make(map[string]string);
 	for _, user := range entities.Users[message.GuildID] {
 		if user.CurrentlyBusy.IsBusy {
@@ -35,9 +35,13 @@ func HandleWhoBusy(discord *discordgo.Session, message *discordgo.MessageCreate)
 	for _, name := range keys {
 		resultString = resultString + name + " is mad busy with " + busyUsers[name] + ".\n";
 	}
+	
+	var err error;
 	if resultString == "" {
-		discord.ChannelMessageSend(message.ChannelID, "no one busy \\:)");
+		_, err = discord.ChannelMessageSend(message.ChannelID, "no one busy \\:)");
 	} else {
-		discord.ChannelMessageSend(message.ChannelID, resultString);
+		_, err = discord.ChannelMessageSend(message.ChannelID, resultString);
 	}
+
+	return err;
 }

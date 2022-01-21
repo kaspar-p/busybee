@@ -16,10 +16,10 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func HandleEnrol(discord *discordgo.Session, message *discordgo.MessageCreate) {
+func HandleEnrol(discord *discordgo.Session, message *discordgo.MessageCreate) error {
 	if len(message.Attachments) != 1 {
 		discord.ChannelMessageSend(message.ChannelID, "Requires exactly 1 `.ics` file to be attached!");
-		return;
+		return nil;
 	}
 
 	// Validate that it is a .ics file
@@ -32,14 +32,14 @@ func HandleEnrol(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	filepath, err := downloadFile(file.URL);
 	if err != nil {
 		fmt.Println("Error encountered when downloading: ", err);
-		return;
+		return nil;
 	}
 
 	// Parse the .ics file into its events
 	events, err := parseCalendar(filepath);
 	if errorMessage, ok := validateCalendarFile(events, err); !ok {
 		discord.ChannelMessageSend(message.ChannelID, errorMessage);
-		return;
+		return nil;
 	}
 
 	fmt.Println("Going to ingest", len(events), "events!");
@@ -50,10 +50,12 @@ func HandleEnrol(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	// Finally, update the roles when a new user is added
 	update.UpdateSingleServer(discord, message.GuildID);
 
-	discord.ChannelMessageSend(message.ChannelID, "you're enrolled \\:)")
+	_, err = discord.ChannelMessageSend(message.ChannelID, "you're enrolled \\:)")
 
 	// Cleanup the file that was created
 	removeFile(filepath);
+
+	return err;
 }
 
 func createRandomString() string {

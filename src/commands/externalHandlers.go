@@ -29,7 +29,12 @@ func HandleCommand(discord *discordgo.Session, message *discordgo.MessageCreate)
 			}
 
 			fmt.Println("Executing handler for message: ", key);
-			handler(discord, message);
+			err := handler(discord, message);
+			if err != nil {
+				fmt.Println("Error encountered while executing command:", command + ". Error: ", err);
+				discord.ChannelMessageSend(message.ChannelID, "error while dealing with " + command + " \\:(");
+				return;
+			}
 		}
 	}
 }

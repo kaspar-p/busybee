@@ -16,13 +16,16 @@ func toNiceTimeString(eventTime time.Time) string {
 }
 
 func getTodaysEvents(user *entities.User) []*entities.BusyTime {
+	year, month, day := time.Now().Date();
+	beginningOfDay := time.Date(year, month, day, 0, 0, 0, 0, time.Local);
+	endOfDay := time.Date(year, month, day, 23, 59, 59, 0, time.Local);
+
 	todaysEvents := make([]*entities.BusyTime, 0);
 	for _, busyTime := range user.BusyTimes {
-		now := time.Now()
-		today := now.Day()
-		if 	(busyTime.Start.UTC().Day() == today) && // start is today AND
-			(busyTime.End.UTC().Day() == today) && // end is today AND
-			(busyTime.End.After(now)) {
+		if 	busyTime.Start.After(beginningOfDay) &&
+			busyTime.End.Before(endOfDay) &&
+			busyTime.End.After(time.Now()) {
+				fmt.Println("Adding event", busyTime.Title, "starting at:", busyTime.Start, "and ending at:", busyTime.End);
 				todaysEvents = append(todaysEvents, busyTime);
 		}
 	}
@@ -31,6 +34,8 @@ func getTodaysEvents(user *entities.User) []*entities.BusyTime {
 	sort.Slice(todaysEvents, func(i, j int) bool {
 		return todaysEvents[i].Start.Unix() < todaysEvents[j].Start.Unix()
 	})
+
+	fmt.Println("Today's events for user", user.Name, "are:", todaysEvents);
 
 	return todaysEvents;
 }

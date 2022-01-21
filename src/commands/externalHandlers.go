@@ -20,7 +20,14 @@ import (
 
 func HandleCommand(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	for key, handler := range commandHandlers {
-		if strings.HasPrefix(message.Content, "." + key) {
+		command := "." + key;
+		if strings.HasPrefix(message.Content, command)  {
+			if strings.Split(message.Content, " ")[0] != command {
+				fmt.Println("Wrong command, prefix matched tho.");
+				discord.ChannelMessageSend(message.ChannelID, "Wrong command. Did you mean`" + command + "`?");
+				return;
+			}
+
 			fmt.Println("Executing handler for message: ", key);
 			handler(discord, message);
 		}

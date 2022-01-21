@@ -22,5 +22,6 @@ var (
 		"enrol": HandleEnrol,
 		"whobusy": HandleWhoBusy,
 		"wyd": HandleWyd,
+		"whenfree": HandleWhenFree,
 	}
 )

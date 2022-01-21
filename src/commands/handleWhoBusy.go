@@ -1,9 +1,25 @@
 package commands
 
 import (
+	"sort"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/kaspar-p/bee/src/entities"
 )
+
+func sortKeysOfMap(unsortedMap map[string]string) []string {
+	// Get keys of map
+	keys := make([]string, 0);
+	for key := range unsortedMap {
+		keys = append(keys, key);
+	}
+
+	sort.Slice(keys, func(i, j int) bool {
+		return unsortedMap[keys[i]] < unsortedMap[keys[j]]
+	})
+
+	return keys;
+}
 
 func HandleWhoBusy(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	busyUsers := make(map[string]string);
@@ -13,9 +29,11 @@ func HandleWhoBusy(discord *discordgo.Session, message *discordgo.MessageCreate)
 		}
 	}
 
+	keys := sortKeysOfMap(busyUsers);
+
 	resultString := ""
-	for name, title := range busyUsers {
-		resultString = resultString + name + " is mad busy with " + title + ".\n";
+	for _, name := range keys {
+		resultString = resultString + name + " is mad busy with " + busyUsers[name] + ".\n";
 	}
 	if resultString == "" {
 		discord.ChannelMessageSend(message.ChannelID, "no one busy \\:)");

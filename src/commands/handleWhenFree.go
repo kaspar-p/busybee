@@ -148,9 +148,22 @@ func HandleWhenFree(discord *discordgo.Session, message *discordgo.MessageCreate
 
 	resultString := "```\n"
 	resultString += "+--------------------------+\n";
-	for hour := 1; hour < 7; hour++ {
-		fmt.Println("whenfree for hour", hour);
-		nextCommonFreeTimeWithHour, found := getNextCommonFreeNumberOfHoursMany(mentionedUsers, hour);
+	maxHours := 12;
+
+	type TimePair struct {
+		Time time.Time
+		Found bool
+	}
+
+	hourTimesMap := make(map[int]TimePair);
+	for hour := 1; hour < maxHours+1; hour++ {
+		t, found := getNextCommonFreeNumberOfHoursMany(mentionedUsers, hour);
+		if found {
+			hourTimesMap[hour] = TimePair{t, found};
+		}
+	}
+
+	for hour, timePair := range hourTimesMap {
 		var hourText string;
 		if hour == 1 {
 			hourText = "hour ";
@@ -158,10 +171,10 @@ func HandleWhenFree(discord *discordgo.Session, message *discordgo.MessageCreate
 			hourText = "hours";
 		}
 
-		if !found {
+		if !timePair.Found {
 			resultString += fmt.Sprintf("| %d %s | %s |\n", hour, hourText, "    NONE \\:(   ");
 		} else {
-			resultString += fmt.Sprintf("| %d %s | %s |\n", hour, hourText, toNiceDateTimeString(nextCommonFreeTimeWithHour));
+			resultString += fmt.Sprintf("| %d %s | %s |\n", hour, hourText, toNiceDateTimeString(timePair.Time));
 		}
 	}
 	resultString += "+--------------------------+\n";

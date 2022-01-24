@@ -61,7 +61,7 @@ func GenerateWhoBusyEmbed(busyUsers map[string]string, keys []string) *discordgo
 	var title string;
 	var description string;
 	if len(busyUsers) == 0 {
-		title = "no one busy \\:(";
+		title = "no one busy \\:)";
 		description = "";
 	} else {
 		title = "who busy";

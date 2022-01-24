@@ -54,8 +54,6 @@ func BotIsReady(discord *discordgo.Session, isReady *discordgo.Ready) {
 	entities.InitializeUsers(guildIds);
 	fmt.Println("Populated role ID map from", len(isReady.Guilds), "guilds!");
 
-	fmt.Println(entities.Users);
-
 	// Connect to the database
 	database.InitializeDatabase();
 	ingest.FillMapsWithDatabaseData();

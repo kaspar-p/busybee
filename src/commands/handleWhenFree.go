@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/kaspar-p/bee/src/constants"
 	"github.com/kaspar-p/bee/src/entities"
 )
 
@@ -171,13 +170,13 @@ func HandleWhenFree(discord *discordgo.Session, message *discordgo.MessageCreate
 		}
 	}
 	
-	embed := GenerateTableEmbed(timePairs)
+	embed := GenerateWhenFreeEmbed(timePairs)
 	_, err := discord.ChannelMessageSendEmbed(message.ChannelID, embed);
 
 	return err;
 }
 
-func GenerateTableEmbed(timePairs []TimePair) *discordgo.MessageEmbed {
+func GenerateWhenFreeEmbed(timePairs []TimePair) *discordgo.MessageEmbed {
 	descString := "```";
 	for _, pair := range timePairs {
 		hourText := "s"
@@ -191,11 +190,5 @@ func GenerateTableEmbed(timePairs []TimePair) *discordgo.MessageEmbed {
 	}
 	descString += "```";
 
-	embed := discordgo.MessageEmbed{
-		Type: "rich",
-		Title: "hours fwee \\:)",
-		Description: descString,
-		Color: constants.BeeColor,
-	}
-	return &embed;
+	return CreateTableEmbed("hours fwee \\:)", descString);
 }

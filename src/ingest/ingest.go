@@ -10,27 +10,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func FillMapsWithDatabaseData() {
-	// Get data and fill the `users` map
-	users := dbLib.DatabaseInstance.GetUsers();
-	for _, user := range users {
-		entities.Users[user.BelongsTo][user.ID] = user;
-	}
-
-	// Get data and fill the busyTimes of each user in the `users` map
-	busyTimesArray := dbLib.DatabaseInstance.GetBusyTimes();
-	for _, busyTime := range busyTimesArray {
-		user := entities.Users[busyTime.BelongsTo][busyTime.OwnerID];
-		user.BusyTimes = append(user.BusyTimes, busyTime);
-	}
-
-	for _, user := range users {
-		user.SortBusyTimes();
-	}
-
-	fmt.Println("Got data: \n\tUsers:", len(users), "\n\tEvents:", len(busyTimesArray));
-}
-
 func IngestNewData(message *discordgo.MessageCreate, events []gocal.Event) {
 	// Create a user if they do not already exist - overwrites BusyTimes
 	user := GetOrCreateUser(message.Author.ID, message.Author.Username, message.GuildID);

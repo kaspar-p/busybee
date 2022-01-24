@@ -49,11 +49,19 @@ func HandleWyd(discord *discordgo.Session, message *discordgo.MessageCreate) err
 		return nil;
 	}
 
-	resultString := mentionedUser.Name + ":\n"
-	for _, busyTime := range busyTimesToday {
-		resultString += "    " + busyTime.Title + ": " + toNiceTimeString(busyTime.Start) + " - " + toNiceTimeString(busyTime.End) + "\n"
-	}
+	embed := GenerateWydEmbed(busyTimesToday, mentionedUser);
 	
-	_, err := discord.ChannelMessageSend(message.ChannelID, resultString);
+	_, err := discord.ChannelMessageSendEmbed(message.ChannelID, embed);
 	return err;
+}
+
+func GenerateWydEmbed(busyTimesToday []*entities.BusyTime, mentionedUser *entities.User) *discordgo.MessageEmbed {
+	resultString := "```"
+	for _, busyTime := range busyTimesToday {
+		resultString += busyTime.Title + ": " + toNiceTimeString(busyTime.Start) + " - " + toNiceTimeString(busyTime.End) + "\n"
+	}
+	resultString += "```";
+
+	embed := CreateTableEmbed(mentionedUser.Name, resultString);
+	return embed;
 }

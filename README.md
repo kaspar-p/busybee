@@ -4,7 +4,7 @@ A discord bot for determining who can get ramen with me. Ingests `.ics` files an
 
 ## Usage
 
-Currently, busybee is manually added to servers. If you want busybee, contact me.
+Currently, busybee is manually added to guilds. If you want busybee, contact me.
 
 ### Commands
 

@@ -9,14 +9,17 @@ import (
 var (
 	BeeColor int
 
+	BotReady bool
 	BusyRoleID string
 	BusyRoleName string
 	BotToken string
 	AppID string
+
 	ConnectionURL string
 	DatabaseName string
 	UsersCollectionName string
 	BusyTimesCollectionName string
+	GuildsCollectionName string
 )
 
 func InitializeViper() {
@@ -32,6 +35,8 @@ func InitializeViper() {
 
 	// Set constants not dependent on Viper
 	BeeColor = 15122779; // Yellow
+	BusyRoleName = "busy :)"
+	BotReady = false;
 
 	// Get environment variables
 	BotToken = viper.GetString("BOT.TOKEN");
@@ -42,7 +47,5 @@ func InitializeViper() {
 	DatabaseName = viper.GetString("MONGO_DB.DATABASE_NAME")
 	UsersCollectionName = viper.GetString("MONGO_DB.COLLECTIONS.USERS_NAME")
 	BusyTimesCollectionName = viper.GetString("MONGO_DB.COLLECTIONS.BUSYTIMES_NAME")
-
-	// Role constants
-	BusyRoleName = viper.GetString("CONSTANTS.ROLE_NAME");
+	GuildsCollectionName = viper.GetString("MONGO_DB.COLLECTIONS.GUILDS_NAME")
 }

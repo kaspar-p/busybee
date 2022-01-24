@@ -23,10 +23,13 @@ type User struct {
 	BelongsTo string
 }
 
-func InitializeUsers() {
+func InitializeUsers(guildIds []string) {
 	Users = make(map[string]map[string] *User);
-}
 
+	for _, guildId := range guildIds {
+		Users[guildId] = make(map[string]*User);
+	}
+}
 
 func CreateUser(userName string, ID string, guildID string) *User {
 	user := User{

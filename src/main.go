@@ -7,9 +7,6 @@ import (
 
 	"github.com/kaspar-p/bee/src/commands"
 	"github.com/kaspar-p/bee/src/constants"
-	"github.com/kaspar-p/bee/src/database"
-	"github.com/kaspar-p/bee/src/entities"
-	"github.com/kaspar-p/bee/src/ingest"
 	"github.com/kaspar-p/bee/src/update"
 
 	"github.com/bwmarrin/discordgo"
@@ -20,9 +17,7 @@ import (
 
 func init() {
 	constants.InitializeViper();
-	entities.InitializeUsers();
-	update.InitializeServerRoleIDMap();
-	
+	update.InitializeGuildRoleMap();
 }
 
 func main() {
@@ -36,7 +31,9 @@ func main() {
 	// Add handlers
 	discord.AddHandler(commands.BotIsReady);
 	discord.AddHandler(commands.HandleCommand);
-	discord.Identify.Intents = discordgo.IntentsGuildMessages;
+	discord.AddHandler(commands.BotJoinedNewGuild)
+	discord.AddHandler(commands.BotRemovedFromGuild);
+	discord.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentsGuilds | discordgo.IntentsGuildBans;
 
 	// Open the bot
 	err = discord.Open();
@@ -45,18 +42,10 @@ func main() {
 		return;
 	}
 
-	// Connect to the database
-	cancel := database.InitializeDatabase();
-	ingest.FillMapsWithDatabaseData();
-
-	// Once everything is ready
-	update.UpdateAllServers(discord);
-	defer cancel();
-	
 	// Create and start the CRON job
 	cronScheduler := cron.New();
 	cronScheduler.AddFunc("1 * * * * *", func() {
-		update.UpdateAllServers(discord);
+		update.UpdateAllGuilds(discord);
 	});
 	cronScheduler.Start();
 	

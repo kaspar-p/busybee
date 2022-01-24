@@ -50,6 +50,18 @@ func (database *Database) AddBusyTimes(busyTimes []*entities.BusyTime) {
 	}
 }
 
+func (database *Database) RemoveAllBusyTimesInGuild(guildId string) error {
+	if database == nil {
+		return &DatabaseUninitializedError{};
+	}
+
+	filter := bson.D {{ Key: "BelongsTo", Value: guildId }};
+	deleteResult, err := database.busyTimes.DeleteMany(database.context, filter);
+	fmt.Println("Deleted", deleteResult.DeletedCount, "users that belonged to guild", guildId);
+
+	return err;
+}
+
 func (database *Database) GetBusyTimes() []*entities.BusyTime {
 	cursor, err := database.busyTimes.Find(database.context, bson.D {{ }});
 	if err != nil {

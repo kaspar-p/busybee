@@ -4,47 +4,53 @@ import (
 	"fmt"
 
 	"github.com/kaspar-p/bee/src/constants"
+	"github.com/kaspar-p/bee/src/database"
 
 	"github.com/bwmarrin/discordgo"
 )
 
-var ServerRoleIDMap map[string]string;
+var GuildRoleMap map[string]string;
 
-func InitializeServerRoleIDMap() {
-	ServerRoleIDMap = make(map[string]string);
+func InitializeGuildRoleMap() {
+	GuildRoleMap = make(map[string]string);
 }
 
-func KeepRolesUpdated(discord *discordgo.Session, guildID string) {
-	roles, err := discord.GuildRoles(guildID);
+func KeepRolesUpdated(discord *discordgo.Session, guildId string) {
+	roles, err := discord.GuildRoles(guildId);
 	if err != nil {
 		fmt.Println("Error getting roles: ", err);
 		return;
 	}
 
-	foundBusyRoleID := "";
+	found := false
 	for _, role := range roles {
-		if role.Name == constants.BusyRoleName {
-			foundBusyRoleID = role.ID;
+		if role.ID == GuildRoleMap[guildId] {
+			found = true;
 		}
 	}
 
-	if foundBusyRoleID != "" {
-		ServerRoleIDMap[guildID] = foundBusyRoleID;
-	} else {
+	if !found {
 		fmt.Println("Found no busy role. Creating one.");
-		
-		// There was no "busy" role - create one
-		newRole, err := discord.GuildRoleCreate(guildID);
-		if err != nil {
-			fmt.Println("Error creating role: ", err);
-		}
+		CreateRoleInGuild(discord, guildId);
+	}
+}
 
-		// Set global busy role ID to be the new ID
-		ServerRoleIDMap[guildID] = newRole.ID;
+func CreateRoleInGuild(discord *discordgo.Session, guildId string) {
+	fmt.Println("Creating busy role in guild: ", guildId);
+	// There was no "busy" role - create one
+	newRole, err := discord.GuildRoleCreate(guildId);
+	if err != nil {
+		fmt.Println("Error creating role: ", err);
+	}
 
-		_, err = discord.GuildRoleEdit(guildID, newRole.ID, constants.BusyRoleName, 12847710, false, 0, true);
-		if err != nil {
-			fmt.Println("Error editing role to have the correct properties. Error:", err);
-		}
+	// Save that data into the database
+	database.DatabaseInstance.AddGuildRolePair(guildId, newRole.ID);
+
+	// Set global busy role ID to be the new ID
+	GuildRoleMap[guildId] = newRole.ID;
+
+	_, err = discord.GuildRoleEdit(guildId, newRole.ID, constants.BusyRoleName, 12847710, false, 0, true);
+	if err != nil {
+		fmt.Println("Error editing role to have the correct properties. Error:", err);
 	}
 }

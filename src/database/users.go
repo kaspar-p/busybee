@@ -7,7 +7,17 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+func (database *Database) RemoveAllUsersInGuild(guildId string) error {
+	if database == nil {
+		return &DatabaseUninitializedError{};
+	}
 
+	filter := bson.D {{ Key: "BelongsTo", Value: guildId }};
+	deleteResult, err := database.users.DeleteMany(database.context, filter);
+	fmt.Println("Deleted", deleteResult.DeletedCount, "users that belonged to guild", guildId);
+
+	return err;
+}
 
 func (database *Database) AddUser(newUser *entities.User) string {
 	if database == nil {

@@ -16,6 +16,7 @@ type Database struct {
 	context context.Context
 	users *mongo.Collection
 	busyTimes *mongo.Collection
+	guilds *mongo.Collection
 }
 
 var DatabaseInstance *Database;
@@ -40,6 +41,7 @@ func InitializeDatabase() context.CancelFunc {
 		context: context,
 		users: client.Database(constants.DatabaseName).Collection(constants.UsersCollectionName),
 		busyTimes: client.Database(constants.DatabaseName).Collection(constants.BusyTimesCollectionName),
+		guilds: client.Database(constants.DatabaseName).Collection(constants.GuildsCollectionName),
 	};
 
 	return cancel;

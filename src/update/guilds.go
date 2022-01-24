@@ -12,7 +12,7 @@ func CheckIfUserBusy(discord *discordgo.Session, user *entities.User, guildID st
 	// Remove role and busy status
 	user.CurrentlyBusy.BusyWith = "";
 	user.CurrentlyBusy.IsBusy = false;
-	err := discord.GuildMemberRoleRemove(guildID, user.ID, ServerRoleIDMap[guildID]);
+	err := discord.GuildMemberRoleRemove(guildID, user.ID, GuildRoleMap[guildID]);
 	if err != nil {
 		fmt.Println("Error removing role from user", user.ID, ". Error: ", err);
 	}
@@ -27,7 +27,7 @@ func CheckIfUserBusy(discord *discordgo.Session, user *entities.User, guildID st
 			user.CurrentlyBusy.IsBusy = true;
 			user.CurrentlyBusy.BusyWith = busyTime.Title;
 
-			err := discord.GuildMemberRoleAdd(guildID, user.ID, ServerRoleIDMap[guildID]);
+			err := discord.GuildMemberRoleAdd(guildID, user.ID, GuildRoleMap[guildID]);
 			if err != nil {
 				fmt.Println("Error adding role to user", user.ID, ", and title:", user.CurrentlyBusy.BusyWith, ". Error:", err);
 			}
@@ -36,7 +36,7 @@ func CheckIfUserBusy(discord *discordgo.Session, user *entities.User, guildID st
 	}
 }
 
-func UpdateSingleServer(discord *discordgo.Session, guildID string) {
+func UpdateSingleGuild(discord *discordgo.Session, guildID string) {
 	KeepRolesUpdated(discord, guildID);
 
 	// For each user with a ID in the `users` map, change their role for the current time
@@ -54,11 +54,11 @@ func UpdateSingleServer(discord *discordgo.Session, guildID string) {
 	}
 }
 
-func UpdateAllServers(discord *discordgo.Session) {
-	fmt.Println("---------------------------- UPDATING ALL SERVERS ----------------------------");
-	for guildID := range ServerRoleIDMap {
+func UpdateAllGuilds(discord *discordgo.Session) {
+	fmt.Println("---------------------------- UPDATING ALL GUILDS ----------------------------");
+	for guildID := range GuildRoleMap {
 		fmt.Printf("Updating roles for guild with id %s and users: %d\n", guildID, len(entities.Users[guildID]));
-		UpdateSingleServer(discord, guildID);
+		UpdateSingleGuild(discord, guildID);
 	}
 	fmt.Println("------------------------------------------------------------------------------");
 }

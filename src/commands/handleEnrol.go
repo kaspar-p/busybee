@@ -48,7 +48,7 @@ func HandleEnrol(discord *discordgo.Session, message *discordgo.MessageCreate) e
 	ingest.IngestNewData(message, events);
 
 	// Finally, update the roles when a new user is added
-	update.UpdateSingleServer(discord, message.GuildID);
+	update.UpdateSingleGuild(discord, message.GuildID);
 
 	_, err = discord.ChannelMessageSend(message.ChannelID, "you're enrolled \\:)")
 
@@ -199,7 +199,7 @@ func downloadFile(URL string) (string, error) {
 // 		}
 // 	}
 
-// 	// Get all commands in the server
+// 	// Get all commands in the guild
 // 	allCommands, err := discord.ApplicationCommands(AppID, GuildID);
 // 	if err != nil {
 // 		fmt.Println("Error getting slash commands: ", err);

@@ -3,7 +3,7 @@ package database
 // GENERIC ERRORS
 
 type DatabaseUninitializedError struct {}
-func (duError *DatabaseUninitializedError) DUError() string {
+func (duError *DatabaseUninitializedError) Error() string {
 	return "Database operation failed because database was nil. Please try again."
 }
 
@@ -65,4 +65,12 @@ type UpdateBusyTimeError struct{
 }
 func (ubtErr *UpdateBusyTimeError) UBTError() string {
 	return "Updating a user failed. Please try again. Error: " + ubtErr.Err.Error()
+}
+
+// GUILDS ERRORS
+type AddGuildRolePairError struct{
+	Err error
+}
+func (addGuildRolePairError *AddUserError) AGRPError() string {
+	return "Database operation failed. Please try again." + addGuildRolePairError.Err.Error()
 }

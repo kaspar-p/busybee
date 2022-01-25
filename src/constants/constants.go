@@ -10,8 +10,6 @@ var (
 	BeeColor int
 
 	BotReady bool
-	BusyRoleID string
-	BusyRoleName string
 	BotToken string
 	AppID string
 
@@ -35,7 +33,6 @@ func InitializeViper() {
 
 	// Set constants not dependent on Viper
 	BeeColor = 15122779; // Yellow
-	BusyRoleName = "busy :)"
 	BotReady = false;
 
 	// Get environment variables

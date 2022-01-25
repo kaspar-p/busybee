@@ -17,14 +17,14 @@ func IngestNewData(message *discordgo.MessageCreate, events []gocal.Event) {
 	OverwriteUserEvents(user, events);
 }
 
-func GetOrCreateUser(ID string, userName string, guildID string) *entities.User {
-	if user, ok := entities.Users[guildID][ID]; ok {
+func GetOrCreateUser(ID string, userName string, guildId string) *entities.User {
+	if user, ok := entities.Users[guildId][ID]; ok {
 		fmt.Println("User found with ID: ", ID);
 		return user;
 	} else {
 		fmt.Println("User created with ID:", ID);
 		// Create the new user
-		user := entities.CreateUser(userName, ID, guildID);
+		user := entities.CreateUser(userName, ID, guildId);
 
 		// Add the new user to the `users` map
 		entities.Users[user.BelongsTo][user.ID] = user;

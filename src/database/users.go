@@ -55,8 +55,8 @@ func (database *Database) GetUsers() []*entities.User {
 	for _, result := range results {
 		name := result["Name"].(string)
 		ID := result["ID"].(string)
-		guildID := result["BelongsTo"].(string)
-		user := entities.CreateUser(name, ID, guildID);
+		guildId := result["BelongsTo"].(string)
+		user := entities.CreateUser(name, ID, guildId);
 
 		users = append(users, user);
 	}

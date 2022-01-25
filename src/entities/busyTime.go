@@ -14,9 +14,9 @@ type BusyTime struct {
 	End time.Time
 }
 
-func CreateBusyTime(ownerID string, guildID string, title string, start time.Time, end time.Time) BusyTime {
+func CreateBusyTime(ownerID string, guildId string, title string, start time.Time, end time.Time) BusyTime {
 	return BusyTime{
-		BelongsTo: guildID,
+		BelongsTo: guildId,
 		OwnerID: ownerID,
 		Title: title,
 		Start: start,

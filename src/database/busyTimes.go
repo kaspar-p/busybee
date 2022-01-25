@@ -78,14 +78,14 @@ func (database *Database) GetBusyTimes() []*entities.BusyTime {
 	// Create BusyTime's out of the results
 	busyTimesArray := make([]*entities.BusyTime, 0);
 	for _, result := range results {
-		guildID := result["BelongsTo"].(string);
+		guildId := result["BelongsTo"].(string);
 		ownerID := result["OwnerID"].(string);
 		title := result["Title"].(string);
 		start := (result["Start"].(primitive.DateTime)).Time();
 		end := (result["End"].(primitive.DateTime)).Time();
 		
 		// Create new busyTime
-		newBusyTime := entities.CreateBusyTime(ownerID, guildID, title, start, end);
+		newBusyTime := entities.CreateBusyTime(ownerID, guildId, title, start, end);
 
 		// Assign new busyTime to array corresponding to ONE user
 		busyTimesArray = append(busyTimesArray, &newBusyTime);

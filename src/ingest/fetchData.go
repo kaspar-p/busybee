@@ -8,8 +8,8 @@ import (
 	"github.com/kaspar-p/bee/src/update"
 )
 
-func FillMapsWithDatabaseData() {
-	guildRolePairs := FetchRoleIdData();
+func FillMapsWithDatabaseData(guildIds []string) {
+	guildRolePairs := FetchRoleIdData(guildIds);
 	users := FetchUserData();
 	allBusyTimes := FetchBusyTimesData()
 
@@ -20,8 +20,9 @@ func FillMapsWithDatabaseData() {
 	fmt.Println("Got data: \n\tUsers:", len(entities.Users), "\n\tEvents:", len(allBusyTimes), "\n\tGuild-Role pairs:", len(guildRolePairs));
 }
 
-func FetchRoleIdData() []dbLib.GuildRolePair {
-	guildRolePairs := dbLib.DatabaseInstance.GetRoleIdsForGuilds();
+func FetchRoleIdData(guildIds []string) []dbLib.GuildRolePair {
+	guildRolePairs := dbLib.DatabaseInstance.GetRoleIdsForGuilds(guildIds);
+
 	for _, pair := range guildRolePairs {
 		update.GuildRoleMap[pair.GuildId] = pair.RoleId;
 	}

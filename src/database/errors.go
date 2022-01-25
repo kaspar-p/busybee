@@ -71,6 +71,13 @@ func (ubtErr *UpdateBusyTimeError) UBTError() string {
 type AddGuildRolePairError struct{
 	Err error
 }
-func (addGuildRolePairError *AddUserError) AGRPError() string {
+func (addGuildRolePairError *AddGuildRolePairError) Error() string {
 	return "Database operation failed. Please try again." + addGuildRolePairError.Err.Error()
+}
+
+type GetGuildRolePairError struct {
+	Err error
+}
+func (getGuildRolePairError *GetGuildRolePairError) Error() string {
+	return "Getting guild role pair error occurred. Please try again." + getGuildRolePairError.Err.Error()
 }

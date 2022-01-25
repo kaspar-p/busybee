@@ -31,7 +31,7 @@ func InitializeUsers(guildIds []string) {
 	}
 }
 
-func CreateUser(userName string, ID string, guildID string) *User {
+func CreateUser(userName string, ID string, guildId string) *User {
 	user := User{
 		Name: userName,
 		ID: ID,
@@ -39,7 +39,7 @@ func CreateUser(userName string, ID string, guildID string) *User {
 			IsBusy: false,
 			BusyWith: "",
 		},
-		BelongsTo: guildID,
+		BelongsTo: guildId,
 		BusyTimes: []*BusyTime{},
 	}
 

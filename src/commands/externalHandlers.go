@@ -52,11 +52,10 @@ func BotIsReady(discord *discordgo.Session, isReady *discordgo.Ready) {
 
 	// Populate the users map
 	entities.InitializeUsers(guildIds);
-	fmt.Println("Populated role ID map from", len(isReady.Guilds), "guilds!");
 
 	// Connect to the database
 	database.InitializeDatabase();
-	ingest.FillMapsWithDatabaseData();
+	ingest.FillMapsWithDatabaseData(guildIds);
 
 	// Once everything is ready
 	update.UpdateAllGuilds(discord);
@@ -75,7 +74,7 @@ func BotJoinedNewGuild(discord *discordgo.Session, event *discordgo.GuildCreate)
 	}
 
 	// Creates a role - adds it to database and GuildRoleMap
-	update.CreateRoleInGuild(discord, event.Guild.ID);
+	update.CreateRole(discord, event.Guild.ID);
 
 	// Populate that in the users map
 	entities.Users[event.Guild.ID] = make(map[string]*entities.User);

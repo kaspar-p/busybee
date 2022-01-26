@@ -5,12 +5,13 @@ import (
 	"github.com/kaspar-p/bee/src/constants"
 )
 
-func CreateTableEmbed(title string, description string) *discordgo.MessageEmbed {
+func CreateTableEmbed(title, description string) *discordgo.MessageEmbed {
 	embed := discordgo.MessageEmbed{
 		Type:        "rich",
 		Title:       title,
 		Description: description,
 		Color:       constants.BeeColor,
 	}
+
 	return &embed
 }

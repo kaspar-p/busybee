@@ -1,7 +1,7 @@
 package constants
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/spf13/viper"
 )
@@ -11,33 +11,33 @@ var (
 
 	BotReady bool
 	BotToken string
-	AppID string
+	AppId    string
 
-	ConnectionURL string
-	DatabaseName string
-	UsersCollectionName string
+	ConnectionURL           string
+	DatabaseName            string
+	UsersCollectionName     string
 	BusyTimesCollectionName string
-	GuildsCollectionName string
+	GuildsCollectionName    string
 )
 
 func InitializeViper() {
-	viper.SetConfigName("env");
-	viper.AddConfigPath(".");
-	viper.AutomaticEnv();
-	viper.SetConfigType("yml");
+	viper.SetConfigName("env")
+	viper.AddConfigPath(".")
+	viper.AutomaticEnv()
+	viper.SetConfigType("yml")
 
-	err := viper.ReadInConfig();
+	err := viper.ReadInConfig()
 	if err != nil {
-		fmt.Println("Error reading from environment variables file: ", err);
+		log.Panic("Error reading from environment variables file: ", err)
 	}
 
 	// Set constants not dependent on Viper
-	BeeColor = 15122779; // Yellow
-	BotReady = false;
+	BeeColor = 15122779 // Yellow
+	BotReady = false
 
 	// Get environment variables
-	BotToken = viper.GetString("BOT.TOKEN");
-	AppID = viper.GetString("BOT.APP_ID");
+	BotToken = viper.GetString("BOT.TOKEN")
+	AppId = viper.GetString("BOT.APP_ID")
 
 	// Database constants
 	ConnectionURL = viper.GetString("MONGO_DB.CONNECTION_URL")

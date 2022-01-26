@@ -1,60 +1,48 @@
-# linters-settings:
-#   errcheck:
-#     check-type-assertions: true
-#   goconst:
-#     min-len: 2
-#     min-occurrences: 3
-#   gocritic:
-#     enabled-tags:
-#       - diagnostic
-#       - experimental
-#       - opinionated
-#       - performance
-#       - style
-#   govet:
-#     check-shadowing: true
-#   nolintlint:
-#     require-explanation: true
-#     require-specific: true
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+  goconst:
+    min-len: 2
+    min-occurrences: 3
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+  govet:
+    check-shadowing: true
+  nolintlint:
+    require-explanation: true
+    require-specific: true
+  revive:
+    rules:
+      - name: var-naming
+        arguments: [["Id"], ["ID"]]
+  stylecheck:
+    checks:
+      [
+        "all",
+        "-ST1000",
+        "-ST1003",
+        "-ST1016",
+        "-ST1020",
+        "-ST1021",
+        "-ST1022",
+        "-ST1023",
+      ]
 
-# linters:
-#   enable-all: true
-#   # enable:
-#   #   - bodyclose
-#   #   - deadcode
-#   #   - depguard
-#   #   - dogsled
-#   #   - dupl
-#   #   - errcheck
-#   #   - exportloopref
-#   #   - exhaustive
-#   #   - goconst
-#   #   - gocritic
-#   #   - gofmt
-#   #   - goimports
-#   #   - gomnd
-#   #   - gocyclo
-#   #   - gosec
-#   #   - gosimple
-#   #   - govet
-#   #   - ineffassign
-#   #   - misspell
-#   #   - nolintlint
-#   #   - nakedret
-#   #   - prealloc
-#   #   - predeclared
-#   #   - revive
-#   #   - staticcheck
-#   #   - structcheck
-#   #   - stylecheck
-#   #   - thelper
-#   #   - tparallel
-#   #   - typecheck
-#   #   - unconvert
-#   #   - unparam
-#   #   - varcheck
-#   #   - whitespace
-#   #   - wsl
-
-# run:
-#   issues-exit-code: 1
+linters:
+  enable-all: true
+  disable:
+    - interfacer
+    - scopelint
+    - golint
+    - maligned
+    - exhaustivestruct
+    - ifshort
+    - gochecknoglobals
+    - revive
+run:
+  issues-exit-code: 1

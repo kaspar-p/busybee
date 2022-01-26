@@ -8,6 +8,7 @@ require (
 	github.com/ChannelMeter/iso8601duration v0.0.0-20150204201828-8da3af7a2a61 // indirect
 	github.com/apognu/gocal v0.9.0 // indirect
 	github.com/bwmarrin/discordgo v0.23.3-0.20211228023845-29269347e820 // indirect
+	github.com/daixiang0/gci v0.2.9 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/snappy v0.0.1 // indirect

@@ -8,70 +8,72 @@ import (
 	"github.com/kaspar-p/bee/src/utils"
 )
 
-var GuildRoleMap map[string]string;
+var GuildRoleMap map[string]string
 
 func InitializeGuildRoleMap() {
-	GuildRoleMap = make(map[string]string);
+	GuildRoleMap = make(map[string]string)
 }
 
 func HandleZeroRoleId(discord *discordgo.Session, guildId string) {
-	CreateRole(discord, guildId);
+	CreateRole(discord, guildId)
 }
 
-func HandleOneRoleId(discord *discordgo.Session, guildId string, roleId string) {
-	fmt.Println("Processing single role ID", roleId);
+func HandleOneRoleId(discord *discordgo.Session, guildId, roleId string) {
+	fmt.Println("Processing single role ID", roleId)
 	// Check if the ID is in the GuildRoleMap - if not, reset it
 	if roleId != GuildRoleMap[guildId] {
-		fmt.Println("Role ID wasn't in the GuildRoleMap, updating map.");
-		ChangeGuildRoleMapEntry(guildId, roleId);
+		fmt.Println("Role ID wasn't in the GuildRoleMap, updating map.")
+		ChangeGuildRoleMapEntry(guildId, roleId)
 	}
 
 	// If the role ID is NOT in discord - then create it and change the GuildRoleMap
 	if !IsRoleIdInGuild(discord, guildId, roleId) {
-		fmt.Printf("\t\t->Role ID '%s' not in discord. Creating it!\n", roleId);
-		newRoleId := CreateRoleInDiscord(discord, guildId);
-		ChangeGuildRoleMapEntry(guildId, newRoleId);
+		fmt.Printf("\t\t->Role ID '%s' not in discord. Creating it!\n", roleId)
 
-		database.DatabaseInstance.UpdateGuildRolePairWithNewRole(guildId, roleId, newRoleId);
+		newRoleId := CreateRoleInDiscord(discord, guildId)
+
+		ChangeGuildRoleMapEntry(guildId, newRoleId)
+		database.DatabaseInstance.UpdateGuildRolePairWithNewRole(guildId, roleId, newRoleId)
 	}
 
-	fmt.Println("Finished processing single role ID");
+	fmt.Println("Finished processing single role ID")
 }
 
 func HandleTwoPlusRoleIds(discord *discordgo.Session, guildId string, roleIds []string) {
-	chosenId := roleIds[0];
-	rest := utils.RemoveStringFromSlice(roleIds, chosenId);
+	chosenId := roleIds[0]
+	rest := utils.RemoveStringFromSlice(roleIds, chosenId)
 
 	// Do all of the same checks with the chosenId as if it were the only entry
-	HandleOneRoleId(discord, guildId, chosenId);
+	HandleOneRoleId(discord, guildId, chosenId)
 
 	// Remove the information about the other entries
 	for _, roleId := range rest {
 		if IsRoleIdInGuild(discord, guildId, roleId) {
-			fmt.Println("Deleting extra role found in discord:", roleId);
-			DeleteRoleFromDiscord(discord, guildId, roleId);
-			fmt.Printf("Reassigning users from role %s to role %s.\n", roleId, chosenId);
-			ReassignRoles(discord, guildId, roleId, chosenId);
+			fmt.Println("Deleting extra role found in discord:", roleId)
+			DeleteRoleFromDiscord(discord, guildId, roleId)
+			fmt.Printf("Reassigning users from role %s to role %s.\n", roleId, chosenId)
+			ReassignRoles(discord, guildId, roleId, chosenId)
 		}
 
-		fmt.Println("Deleting extra role found in database:", roleId);
-		DeleteGuildRolePairFromDatabase(guildId, roleId);
+		fmt.Println("Deleting extra role found in database:", roleId)
+		DeleteGuildRolePairFromDatabase(guildId, roleId)
 	}
 }
 
 func RunRoleValidityCheck(discord *discordgo.Session, guildId string) {
-	fmt.Printf("\tBeginning cleanup process for guild %s!\n", guildId);
+	fmt.Printf("\tBeginning cleanup process for guild %s!\n", guildId)
 
-	dbRoleIds := database.DatabaseInstance.GetRoleIdsForGuild(guildId);
-	fmt.Printf("Cleanup process found %d role IDs for this guild %s\n", len(dbRoleIds), guildId);
+	dbRoleIds := database.DatabaseInstance.GetRoleIdsForGuild(guildId)
+	fmt.Printf("Cleanup process found %d role IDs for this guild %s\n", len(dbRoleIds), guildId)
 
-	if len(dbRoleIds) == 0 {
-		HandleZeroRoleId(discord, guildId);
-	} else if len(dbRoleIds) == 1 {
-		HandleOneRoleId(discord, guildId, dbRoleIds[0]);
-	} else {
-		HandleTwoPlusRoleIds(discord, guildId, dbRoleIds);
+	switch len(dbRoleIds) {
+	case 0:
+		HandleZeroRoleId(discord, guildId)
+	case 1:
+		HandleOneRoleId(discord, guildId, dbRoleIds[0])
+	default:
+		HandleTwoPlusRoleIds(discord, guildId, dbRoleIds)
 	}
 
-	fmt.Println("Ending cleanup process!");
+	fmt.Println("Ending cleanup process!")
 }

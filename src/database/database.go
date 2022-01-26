@@ -2,53 +2,54 @@ package database
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"time"
 
 	"github.com/kaspar-p/bee/src/constants"
-
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Database struct {
-	context context.Context
-	users *mongo.Collection
+	context   context.Context
+	users     *mongo.Collection
 	busyTimes *mongo.Collection
-	guilds *mongo.Collection
+	guilds    *mongo.Collection
 }
 
-var DatabaseInstance *Database;
+var DatabaseInstance *Database
 
 func Connect() (*mongo.Client, context.Context, context.CancelFunc) {
-	clientOptions := options.Client().ApplyURI(constants.ConnectionURL);
-	context, cancel := context.WithTimeout(context.Background(), 10 * time.Hour);
-	
-	client, err := mongo.Connect(context, clientOptions);
+	hoursKeepAlive := 10
+
+	clientOptions := options.Client().ApplyURI(constants.ConnectionURL)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(hoursKeepAlive)*time.Hour)
+
+	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
-		fmt.Println("Error connecting to database: ", err);
-		cancel();
+		log.Panic("Error connecting to database: ", err)
+		cancel()
 	}
 
-	return client, context, cancel;
+	return client, ctx, cancel
 }
 
 func InitializeDatabase() context.CancelFunc {
-	client, context, cancel := Connect();
+	client, ctx, cancel := Connect()
 
 	DatabaseInstance = &Database{
-		context: context,
-		users: client.Database(constants.DatabaseName).Collection(constants.UsersCollectionName),
+		context:   ctx,
+		users:     client.Database(constants.DatabaseName).Collection(constants.UsersCollectionName),
 		busyTimes: client.Database(constants.DatabaseName).Collection(constants.BusyTimesCollectionName),
-		guilds: client.Database(constants.DatabaseName).Collection(constants.GuildsCollectionName),
-	};
+		guilds:    client.Database(constants.DatabaseName).Collection(constants.GuildsCollectionName),
+	}
 
-	return cancel;
+	return cancel
 }
 
-func ObjectIDToString(insertedID interface{}) string {
-	objectID, _ := insertedID.(primitive.ObjectID);
-	return objectID.String()
-}
+func ObjectIdToString(insertedId interface{}) string {
+	objectId, _ := insertedId.(primitive.ObjectID)
 
+	return objectId.String()
+}

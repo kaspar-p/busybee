@@ -3,84 +3,98 @@ package commands
 import (
 	"fmt"
 	"io"
+	"log"
 	"math/rand"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/kaspar-p/bee/src/ingest"
-	"github.com/kaspar-p/bee/src/update"
-
 	"github.com/apognu/gocal"
 	"github.com/bwmarrin/discordgo"
+	"github.com/kaspar-p/bee/src/ingest"
+	"github.com/kaspar-p/bee/src/update"
+	"github.com/pkg/errors"
 )
 
 func HandleEnrol(discord *discordgo.Session, message *discordgo.MessageCreate) error {
 	if len(message.Attachments) != 1 {
-		discord.ChannelMessageSend(message.ChannelID, "Requires exactly 1 `.ics` file to be attached!");
-		return nil;
+		_, err := discord.ChannelMessageSend(message.ChannelID, "Requires exactly 1 `.ics` file to be attached!")
+
+		return errors.Wrap(err, "Error sending error message 'Requires exactly 1 `.ics` file to be attached!'.")
 	}
 
 	// Validate that it is a .ics file
-	file := message.Attachments[0];
+	file := message.Attachments[0]
 	if !strings.HasSuffix(file.Filename, ".ics") {
-		discord.ChannelMessageSend(message.ChannelID, "Requires the file to be in `.ics` format!");
+		_, err := discord.ChannelMessageSend(message.ChannelID, "Requires the file to be in `.ics` format!")
+
+		return errors.Wrap(err, "Error in sending 'requires .ics file type' error message.")
 	}
 
 	// Download the .ics file
-	filepath, err := downloadFile(file.URL);
+	filepath, err := downloadFile(file.URL)
 	if err != nil {
-		fmt.Println("Error encountered when downloading: ", err);
-		return nil;
+		log.Println("Error encountered when downloading: ", err)
+
+		_, err2 := discord.ChannelMessageSend(message.ChannelID, "Downloading .ics file failed. Please try again.")
+
+		return errors.Wrap(err2, "Error in sending 'Download failed' message.")
 	}
+
+	// Cleanup the file that was created
+	defer removeFile(filepath)
 
 	// Parse the .ics file into its events
-	events, err := parseCalendar(filepath);
+	events, err := parseCalendar(filepath)
 	if errorMessage, ok := validateCalendarFile(events, err); !ok {
-		discord.ChannelMessageSend(message.ChannelID, errorMessage);
-		return nil;
+		_, err2 := discord.ChannelMessageSend(message.ChannelID, errorMessage)
+
+		return errors.Wrap(err2, "Error sending generic error validation message!")
 	}
 
-	fmt.Println("Going to ingest", len(events), "events!");
+	fmt.Println("Going to ingest", len(events), "events!")
 
 	// Create new users and their events
-	ingest.IngestNewData(message, events);
+	ingest.IngestNewData(message, events)
 
 	// Finally, update the roles when a new user is added
-	update.UpdateSingleGuild(discord, message.GuildID);
+	update.UpdateSingleGuild(discord, message.GuildID)
 
 	_, err = discord.ChannelMessageSend(message.ChannelID, "you're enrolled \\:)")
 
-	// Cleanup the file that was created
-	removeFile(filepath);
-
-	return err;
+	return errors.Wrap(err, "Message in response to .enrol failed to send.")
 }
 
 func createRandomString() string {
 	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
-	alphabet := "abcdefghijklmnopqrstuvwxyz";
+	alphabet := "abcdefghijklmnopqrstuvwxyz"
 	length := 20
 
 	randBytes := make([]byte, length)
 	for i := range randBytes {
 		randBytes[i] = alphabet[seededRand.Intn(len(alphabet))]
 	}
+
 	return string(randBytes)
 }
 
 func validateCalendarFile(events []gocal.Event, err error) (message string, ok bool) {
 	if err != nil || len(events) == 0 {
-		fmt.Println("Error encountered while parsing .ics file: ", err);
-		return "Error parsing corrupt `.ics` file. No events were found \\:(", false;
+		log.Println("Error encountered while parsing .ics file: ", err)
+
+		return "Error parsing corrupt `.ics` file. No events were found \\:(", false
 	}
 
 	// Check that all events have nonempty titles
-	for _, event := range events {
-		if len(event.Summary) == 0 {
-			fmt.Println("Error encountered while parsing .ics file. Empty titles on some events");
-			return "Error encountered while parsing .ics file. Some event's have empty titles. This is not (!) allowed \\:(", false;
+	for i := 0; i < len(events); i++ {
+		event := events[i]
+
+		if event.Summary == "" {
+			log.Println("Error encountered while parsing .ics file. Empty titles on some events")
+
+			return "Error encountered while parsing .ics file. " +
+				"Some event's have empty titles. This is not (!) allowed \\:(", false
 		}
 	}
 
@@ -88,100 +102,107 @@ func validateCalendarFile(events []gocal.Event, err error) (message string, ok b
 }
 
 func parseCalendar(filepath string) ([]gocal.Event, error) {
-	file, err := os.Open(filepath);
+	file, err := os.Open(filepath)
 	if err != nil {
-		fmt.Println("Error opening .ics file: ", err);
-		return nil, err;
+		log.Println("Error opening .ics file: ", err)
+
+		return nil, errors.Wrap(err, "Error opening .ics file.")
 	}
-	defer file.Close();
+	defer file.Close()
 
-	parser := gocal.NewParser(file);
-	start, end := DetermineCurrentSemester();
-	parser.Start = &start;
-	parser.End = &end;
-	parser.SkipBounds = true;
+	parser := gocal.NewParser(file)
+	start, end := DetermineCurrentSemester()
+	parser.Start = &start
+	parser.End = &end
+	parser.SkipBounds = true
 
-	err = parser.Parse();
+	err = parser.Parse()
 	if err != nil {
-		fmt.Println("Parsing error: ", err);
-		return nil, err;
+		fmt.Println("Parsing error: ", err)
+
+		return nil, errors.Wrap(err, "Parsing .ics file error.")
 	}
 
-	return parser.Events, nil;
+	return parser.Events, nil
 }
 
 func DetermineCurrentSemester() (time.Time, time.Time) {
-	semesters := map[string]string {
-		"January": "Winter",
-		"February": "Winter",
-		"March": "Winter",
-		"April": "Winter",
-		"May": "Summer",
-		"June": "Summer",
-		"July": "Summer",
-		"August": "Summer",
+	semesters := map[string]string{
+		"January":   "Winter",
+		"February":  "Winter",
+		"March":     "Winter",
+		"April":     "Winter",
+		"May":       "Summer",
+		"June":      "Summer",
+		"July":      "Summer",
+		"August":    "Summer",
 		"September": "Fall",
-		"October": "Fall",
-		"November": "Fall",
-		"December": "Fall",
+		"October":   "Fall",
+		"November":  "Fall",
+		"December":  "Fall",
 	}
 
-	now := time.Now();
-	startEndMap := map[string]time.Time {
+	now := time.Now()
+	startEndMap := map[string]time.Time{
 		"Winter": time.Date(now.Year(), time.January, 1, 0, 0, 0, 0, now.Location()),
 		"Summer": time.Date(now.Year(), time.May, 1, 0, 0, 0, 0, now.Location()),
-		"Fall": time.Date(now.Year(), time.September, 1, 0, 0, 0, 0, now.Location()),
+		"Fall":   time.Date(now.Year(), time.September, 1, 0, 0, 0, 0, now.Location()),
 	}
 
-	currentSemester := semesters[now.Month().String()];
+	currentSemester := semesters[now.Month().String()]
 
-	var start time.Time;
-	var end time.Time;
-	if (currentSemester == "Winter") {
-		start = startEndMap["Winter"];
-		end = startEndMap["Summer"];
-	} else if (currentSemester == "Summer") {
-		start = startEndMap["Summer"];
-		end = startEndMap["Fall"];
-	} else if (currentSemester == "Fall") {
-		start = startEndMap["Fall"];
-		end = time.Date(now.Year() + 1, time.January, 1, 0, 0, 0, 0, nil)
+	var start, end time.Time
+
+	switch currentSemester {
+	case "Winter":
+		start = startEndMap["Winter"]
+		end = startEndMap["Summer"]
+	case "Summer":
+		start = startEndMap["Summer"]
+		end = startEndMap["Fall"]
+	case "Fall":
+		start = startEndMap["Fall"]
+		end = time.Date(now.Year()+1, time.January, 1, 0, 0, 0, 0, nil)
 	}
 
-	return start, end;
+	return start, end
 }
 
 func removeFile(filepath string) {
-	err := os.Remove(filepath);
+	err := os.Remove(filepath)
 	if err != nil {
-		fmt.Println("Error removing file with path", filepath);
-		return;
+		log.Println("Error removing file with path", filepath);
+		panic(errors.New("Error removing file with path: " + filepath));
 	}
 }
 
-func downloadFile(URL string) (string, error) {
-	response, err := http.Get(URL);
+func downloadFile(url string) (string, error) {
+	response, err := http.Get(url)
 	if err != nil {
-		fmt.Println("Error getting file: ", err);
-		return "", err;
+		log.Println("Error getting file: ", err)
+
+		return "", errors.Wrap(err, "Error getting the download URL from discord. Didn't download.")
 	}
-	defer response.Body.Close();
+	defer response.Body.Close()
 
 	filepath := "tmp/" + createRandomString()
-	output, err := os.Create(filepath);
+
+	output, err := os.Create(filepath)
 	if err != nil {
 		fmt.Printf("Error creating file at: %s. Error: %s\n", filepath, err)
-		return "", err;
-	}
-	defer output.Close();
 
-	_, err = io.Copy(output, response.Body);
+		return "", errors.Wrap(err, "Error creating file.")
+	}
+	defer output.Close()
+
+	_, err = io.Copy(output, response.Body)
 	if err != nil {
-		fmt.Println("Copying response body to file buffer failed. Error: ", err);
-		return "", err;
+		fmt.Println("Copying response body to file buffer failed. Error: ", err)
+
+		return "", errors.Wrap(err, "Error copying to output file from output stream.")
 	}
 
-	return filepath, err;
+	return filepath, errors.Wrap(err, "Error downloading file!")
 }
 
 // SLASH COMMAND CODE
@@ -189,9 +210,9 @@ func downloadFile(URL string) (string, error) {
 // 	// Get all global commands
 // 	allGlobalCommands, err := discord.ApplicationCommands(AppID, "");
 // 	if err != nil {
-// 		fmt.Println("Error getting global commands: ", err);
+// 		log.Panic("Error getting global commands: ", err);
 // 	}
-	
+
 // 	// Delete all global commands associated with the bot (same ApplicationID)
 // 	for _, command := range allGlobalCommands {
 // 		if (AppID == command.ID) {
@@ -202,7 +223,7 @@ func downloadFile(URL string) (string, error) {
 // 	// Get all commands in the guild
 // 	allCommands, err := discord.ApplicationCommands(AppID, GuildID);
 // 	if err != nil {
-// 		fmt.Println("Error getting slash commands: ", err);
+// 		log.Panic("Error getting slash commands: ", err);
 // 		return;
 // 	}
 
@@ -211,7 +232,7 @@ func downloadFile(URL string) (string, error) {
 // 		// if (AppID == command.ApplicationID) {
 // 		err = discord.ApplicationCommandDelete(AppID, GuildID, command.ID);
 // 		if err != nil {
-// 			fmt.Println("Error deleting slash command: ", err);
+// 			log.Panic("Error deleting slash command: ", err);
 // 		}
 // 		// }
 // 	}

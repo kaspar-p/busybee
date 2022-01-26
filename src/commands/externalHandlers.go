@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -10,6 +11,7 @@ import (
 	"github.com/kaspar-p/bee/src/entities"
 	"github.com/kaspar-p/bee/src/ingest"
 	"github.com/kaspar-p/bee/src/update"
+	"github.com/pkg/errors"
 )
 
 // SLASH COMMAND CODE
@@ -22,73 +24,77 @@ import (
 
 func HandleCommand(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	for key, handler := range commandHandlers {
-		command := "." + key;
-		if strings.HasPrefix(message.Content, command)  {
+		command := "." + key
+		if strings.HasPrefix(message.Content, command) {
 			if strings.Split(message.Content, " ")[0] != command {
-				fmt.Println("Wrong command, prefix matched tho.");
-				discord.ChannelMessageSend(message.ChannelID, "Wrong command. Did you mean`" + command + "`?");
-				return;
+				fmt.Println("Wrong command, prefix matched tho.")
+
+				_, err := discord.ChannelMessageSend(message.ChannelID, "Wrong command. Did you mean`"+command+"`?")
+				panic(errors.Wrap(err, "Error encountered while sending 'wrong command' message"))
 			}
 
-			fmt.Println("Executing handler for message: ", key);
-			err := handler(discord, message);
+			fmt.Println("Executing handler for message: ", key)
+
+			err := handler(discord, message)
 			if err != nil {
-				fmt.Println("Error encountered while executing command:", command + ". Error: ", err);
-				discord.ChannelMessageSend(message.ChannelID, "error while dealing with " + command + " \\:(");
-				return;
+				log.Println("Error encountered while executing command:", command+". Error: ", err)
+				_, err := discord.ChannelMessageSend(message.ChannelID, "error while dealing with "+command+" \\:(")
+
+				panic(errors.Wrap(err, "Error encountered while sending 'error encountered while handling handler' message"));
 			}
 		}
 	}
 }
 
-func BotIsReady(discord *discordgo.Session, isReady *discordgo.Ready) { 
-	fmt.Println("Bot successfully connected! Press CMD + C at any time to exit.");
-	fmt.Println("Bot is a part of", len(isReady.Guilds), "guilds!");
+func BotIsReady(discord *discordgo.Session, isReady *discordgo.Ready) {
+	fmt.Println("Bot successfully connected! Press CMD + C at any time to exit.")
+	fmt.Println("Bot is a part of", len(isReady.Guilds), "guilds!")
 
-	guildIds := make([]string, 0);
+	guildIds := make([]string, 0)
 	for _, guild := range isReady.Guilds {
-		guildIds = append(guildIds, guild.ID);
+		guildIds = append(guildIds, guild.ID)
 	}
 
 	// Populate the users map
-	entities.InitializeUsers(guildIds);
+	entities.InitializeUsers(guildIds)
 
 	// Connect to the database
-	database.InitializeDatabase();
-	ingest.FillMapsWithDatabaseData(guildIds);
+	database.InitializeDatabase()
+	ingest.FillMapsWithDatabaseData(guildIds)
 
 	// Once everything is ready
-	update.UpdateAllGuilds(discord);
+	update.UpdateAllGuilds(discord)
 
 	// SLASH COMMAND CODE
 	// clearAndRegisterCommands(discord);
 
-	constants.BotReady = true;
+	constants.BotReady = true
 }
 
 func BotJoinedNewGuild(discord *discordgo.Session, event *discordgo.GuildCreate) {
-	if (event.Unavailable || !constants.BotReady) {
-		return;
+	if event.Unavailable || !constants.BotReady {
+		return
 	} else {
-		fmt.Println("Bot has joined a new guild with guildId: ", event.Guild.ID);
+		fmt.Println("Bot has joined a new guild with guildId: ", event.Guild.ID)
 	}
 
 	// Creates a role - adds it to database and GuildRoleMap
-	update.CreateRole(discord, event.Guild.ID);
+	update.CreateRole(discord, event.Guild.ID)
 
 	// Populate that in the users map
-	entities.Users[event.Guild.ID] = make(map[string]*entities.User);
+	entities.Users[event.Guild.ID] = make(map[string]*entities.User)
 }
 
 func BotRemovedFromGuild(discord *discordgo.Session, event *discordgo.GuildDelete) {
-	guildId := event.Guild.ID;
+	guildId := event.Guild.ID
 	if event.Unavailable {
-		fmt.Println("Server has become unavailable. Guild Id: ", guildId);
-		return;
-	} else {
-		fmt.Println("Bot has been removed from guild with guildId: ", guildId);
+		fmt.Println("Server has become unavailable. Guild Id: ", guildId)
+
+		return
 	}
-	
+
+	fmt.Println("Bot has been removed from guild with guildId: ", guildId)
+
 	// FROM DISCORD
 	//	- remove role
 	// FROM DB
@@ -100,21 +106,28 @@ func BotRemovedFromGuild(discord *discordgo.Session, event *discordgo.GuildDelet
 	// 	- remove role with guild id
 
 	// Remove role from discord
-	err := discord.GuildRoleDelete(guildId, update.GuildRoleMap[guildId]);
+	err := discord.GuildRoleDelete(guildId, update.GuildRoleMap[guildId])
 	if err != nil {
-		fmt.Println("Error removing busy role from guild:", guildId, "when getting removed. Error: ", err);
+		log.Println("Error removing busy role from guild:", guildId, "when getting removed. Error: ", err)
+
+		panic(errors.Wrap(err, "Error deleting role from guild"+guildId+"when getting removed. "));
 	}
 
 	// Remove all data in guild from db
-	database.DatabaseInstance.RemoveAllDataInGuild(guildId);
+	err = database.DatabaseInstance.RemoveAllDataInGuild(guildId)
+	if err != nil {
+		log.Println("Error removing all data of a guild!")
+
+		panic(errors.Wrap(err, "Error removing all data of a guild!"))
+	}
 
 	// Remove all data in memory
 	// TODO: rework for store structure
 
 	// Delete users
-	delete(entities.Users, guildId);
+	delete(entities.Users, guildId)
 
 	// Delete GuildRolePair
 	// TODO: rework for store[guildId] structure
-	delete(update.GuildRoleMap, guildId);
+	delete(update.GuildRoleMap, guildId)
 }

@@ -15,31 +15,54 @@ import (
 
 // SLASH COMMAND CODE
 // func handleCommand(discord *discordgo.Session, interaction *discordgo.InteractionCreate) {
-// 	handler, ok := commandHandlers[interaction.ApplicationCommandData().Name];
+// 	handler, ok := commandHandlers[interaction.ApplicationCommandData().Name]
 // 	if ok {
-// 		handler(discord, interaction);
+// 		handler(discord, interaction)
 // 	}
 // }
 
 func HandleCommand(discord *discordgo.Session, message *discordgo.MessageCreate) {
+	// Setup common error handler for panic() calls within the message handlers
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Recovered from error in handler: ", r)
+		}
+	}()
+
 	for key, handler := range commandHandlers {
 		command := "." + key
-		if strings.HasPrefix(message.Content, command) {
-			if strings.Split(message.Content, " ")[0] != command {
-				log.Println("Wrong command, prefix matched tho.")
 
-				_, err := discord.ChannelMessageSend(message.ChannelID, "Wrong command. Did you mean`"+command+"`?")
-				panic(errors.Wrap(err, "Error encountered while sending 'wrong command' message"))
+		// Check if the command matches
+		if !strings.HasPrefix(message.Content, command) {
+			continue
+		}
+
+		// Check if the command only matches - and then garbage. e.g. .whobusybusy
+		if strings.Split(message.Content, " ")[0] != command {
+			log.Println("Wrong command, prefix matched tho.")
+
+			_, err := discord.ChannelMessageSend(message.ChannelID, "Wrong command. Did you mean`"+command+"`?")
+			if err != nil {
+				log.Println("Error: error sending 'wrong command' message: ", err)
+
+				return
 			}
 
-			log.Println("Executing handler for message: ", key)
+			continue
+		}
 
-			err := handler(discord, message)
+		log.Println("Executing handler for message: ", key)
+
+		// Execute the handler that matches the command
+		err := handler(discord, message)
+		if err != nil {
+			log.Printf("Error encountered while executing command %s. Error: %v.\n", command, err)
+			_, err := discord.ChannelMessageSend(message.ChannelID, "error while dealing with "+command+" \\:(")
+
 			if err != nil {
-				log.Println("Error encountered while executing command:", command+". Error: ", err)
-				_, err := discord.ChannelMessageSend(message.ChannelID, "error while dealing with "+command+" \\:(")
+				log.Println("Error while sending error message for general handler failure: ", err)
 
-				panic(errors.Wrap(err, "Error encountered while sending 'error encountered while handling handler' message"))
+				return
 			}
 		}
 	}
@@ -65,7 +88,7 @@ func BotIsReady(discord *discordgo.Session, isReady *discordgo.Ready) {
 	update.UpdateAllGuilds(discord)
 
 	// SLASH COMMAND CODE
-	// clearAndRegisterCommands(discord);
+	// clearAndRegisterCommands(discord)
 
 	constants.BotReady = true
 }
@@ -77,11 +100,11 @@ func BotJoinedNewGuild(discord *discordgo.Session, event *discordgo.GuildCreate)
 		log.Println("Bot has joined a new guild with guildId: ", event.Guild.ID)
 	}
 
-	// Creates a role - adds it to database and GuildRoleMap
-	update.CreateRole(discord, event.Guild.ID)
+	// // Creates a role - adds it to database and GuildRoleMap
+	// update.CreateRole(discord, event.Guild.ID)
 
-	// Populate that in the users map
-	entities.Users[event.Guild.ID] = make(map[string]*entities.User)
+	// // Populate that in the users map
+	// entities.Users[event.Guild.ID] = make(map[string]*entities.User)
 }
 
 func BotRemovedFromGuild(discord *discordgo.Session, event *discordgo.GuildDelete) {

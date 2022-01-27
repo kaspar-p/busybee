@@ -7,6 +7,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/kaspar-p/bee/src/entities"
+	"github.com/kaspar-p/bee/src/utils"
 )
 
 func CheckIfUserBusy(discord *discordgo.Session, user *entities.User, guildId string) {
@@ -14,10 +15,14 @@ func CheckIfUserBusy(discord *discordgo.Session, user *entities.User, guildId st
 	user.CurrentlyBusy.BusyWith = ""
 	user.CurrentlyBusy.IsBusy = false
 
-	err := discord.GuildMemberRoleRemove(guildId, user.Id, GuildRoleMap[guildId])
+	discordUser, err := discord.GuildMember(guildId, user.Id)
 	if err != nil {
-		log.Panic("Error removing role from user", user.Id, ". Error: ", err)
+		log.Printf("Error getting discord user %s with ID %s. Error: %v\n", user.Name, user.Id, err)
+
+		return
 	}
+
+	alreadyHasRole, _ := utils.StringInSlice(discordUser.Roles, GuildRoleMap[guildId])
 
 	// Add role back if necessary
 	for _, busyTime := range user.BusyTimes {
@@ -29,12 +34,25 @@ func CheckIfUserBusy(discord *discordgo.Session, user *entities.User, guildId st
 			user.CurrentlyBusy.IsBusy = true
 			user.CurrentlyBusy.BusyWith = busyTime.Title
 
-			err := discord.GuildMemberRoleAdd(guildId, user.Id, GuildRoleMap[guildId])
-			if err != nil {
-				log.Panic("Error adding role to user", user.Id, ", and title:", user.CurrentlyBusy.BusyWith, ". Error:", err)
+			// Only add the role for the user if they don't already have it
+			if !alreadyHasRole {
+				err := discord.GuildMemberRoleAdd(guildId, user.Id, GuildRoleMap[guildId])
+				if err != nil {
+					log.Panic("Error adding role to user", user.Id, ", and title:", user.CurrentlyBusy.BusyWith, ". Error:", err)
+				}
 			}
 
 			break
+		}
+	}
+
+	// Remove the role - they are no longer busy
+	if !user.CurrentlyBusy.IsBusy && alreadyHasRole {
+		err := discord.GuildMemberRoleRemove(guildId, user.Id, GuildRoleMap[guildId])
+		if err != nil {
+			log.Printf("Error removing role %s from user %s with ID %s.\n", GuildRoleMap[guildId], user.Name, user.Id)
+
+			return
 		}
 	}
 }

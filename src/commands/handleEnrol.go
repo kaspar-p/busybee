@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base32"
 	"io"
@@ -174,7 +175,14 @@ func removeFile(filepath string) {
 }
 
 func downloadFile(url string) (string, error) {
-	response, err := http.Get(url)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, http.NoBody)
+	if err != nil {
+		log.Println("Error setting up request:", err)
+
+		return "", errors.Wrap(err, "Error setting up request to url: "+url)
+	}
+
+	response, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Println("Error getting file: ", err)
 
@@ -205,45 +213,45 @@ func downloadFile(url string) (string, error) {
 // SLASH COMMAND CODE
 // func clearAndRegisterCommands(discord *discordgo.Session) {
 // 	// Get all global commands
-// 	allGlobalCommands, err := discord.ApplicationCommands(AppID, "");
+// 	allGlobalCommands, err := discord.ApplicationCommands(AppID, "")
 // 	if err != nil {
-// 		log.Panic("Error getting global commands: ", err);
+// 		log.Panic("Error getting global commands: ", err)
 // 	}
 
 // 	// Delete all global commands associated with the bot (same ApplicationID)
 // 	for _, command := range allGlobalCommands {
 // 		if (AppID == command.ID) {
-// 			discord.ApplicationCommandDelete(AppID, "", command.ID);
+// 			discord.ApplicationCommandDelete(AppID, "", command.ID)
 // 		}
 // 	}
 
 // 	// Get all commands in the guild
-// 	allCommands, err := discord.ApplicationCommands(AppID, GuildID);
+// 	allCommands, err := discord.ApplicationCommands(AppID, GuildID)
 // 	if err != nil {
-// 		log.Panic("Error getting slash commands: ", err);
-// 		return;
+// 		log.Panic("Error getting slash commands: ", err)
+// 		return
 // 	}
 
 // 	// Delete all commands associated with the bot (same ApplicationID)
 // 	for _, command := range allCommands {
 // 		// if (AppID == command.ApplicationID) {
-// 		err = discord.ApplicationCommandDelete(AppID, GuildID, command.ID);
+// 		err = discord.ApplicationCommandDelete(AppID, GuildID, command.ID)
 // 		if err != nil {
-// 			log.Panic("Error deleting slash command: ", err);
+// 			log.Panic("Error deleting slash command: ", err)
 // 		}
 // 		// }
 // 	}
 
 // 	// Register commands again as new
-// 	createdCommands, _ = discord.ApplicationCommandBulkOverwrite(discord.State.User.ID, GuildID, commands);
-// 	log.Println("Successfully registered commands!");
+// 	createdCommands, _ = discord.ApplicationCommandBulkOverwrite(discord.State.User.ID, GuildID, commands)
+// 	log.Println("Successfully registered commands!")
 // }
 
 // func handleEnrolment(discord *discordgo.Session, interaction *discordgo.InteractionCreate) {
-// 	println("Begin handling!");
-// 	log.Println(interaction.Message);
+// 	println("Begin handling!")
+// 	log.Println(interaction.Message)
 // 	log.Println(interaction.Data)
-// 	log.Println(interaction.Message.Attachments);
+// 	log.Println(interaction.Message.Attachments)
 
 // 	discord.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 // 		Type: discordgo.InteractionResponseChannelMessageWithSource,

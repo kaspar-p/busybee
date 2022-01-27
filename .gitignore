@@ -6,3 +6,6 @@ tmp/
 
 # Ignore developer-specific settings
 .vscode
+
+# Ignore server-specific notes
+notes.txt

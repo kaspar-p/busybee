@@ -57,10 +57,11 @@ func UpdateSingleGuild(discord *discordgo.Session, guildId string) {
 	}
 }
 
-func UpdateAllGuilds(discord *discordgo.Session) {
+func ValidateAllGuilds(discord *discordgo.Session) {
 	fmt.Println("--------------------------- VALIDATING ALL GUILDS ----------------------------")
 
 	var waitGroup sync.WaitGroup
+
 	for guildId := range GuildRoleMap {
 		waitGroup.Add(1)
 
@@ -76,22 +77,21 @@ func UpdateAllGuilds(discord *discordgo.Session) {
 	// Wait for all validity checks to run
 	waitGroup.Wait()
 	fmt.Println("------------------------------------------------------------------------------")
+}
+
+func UpdateAllGuilds(discord *discordgo.Session) {
+	// Boolean on whether or not to validate data.
+	// Keep false until there is a mechanism for detecting disconnects from discord
+	performValidation := false
+	if performValidation {
+		ValidateAllGuilds(discord);
+	}
 
 	fmt.Println("---------------------------- UPDATING ALL GUILDS -----------------------------")
 
 	for guildId := range GuildRoleMap {
-		waitGroup.Add(1)
-
-		go func(discord *discordgo.Session, guildId string) {
-			// Wait for this process to finish
-			defer waitGroup.Done()
-
-			// Run the process
-			UpdateSingleGuild(discord, guildId)
-		}(discord, guildId)
+		UpdateSingleGuild(discord, guildId)
 	}
-
-	waitGroup.Wait()
 
 	fmt.Println("------------------------------------------------------------------------------")
 }

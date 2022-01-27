@@ -11,10 +11,6 @@ import (
 )
 
 func CheckIfUserBusy(discord *discordgo.Session, user *entities.User, guildId string) {
-	// Remove role and busy status
-	user.CurrentlyBusy.BusyWith = ""
-	user.CurrentlyBusy.IsBusy = false
-
 	discordUser, err := discord.GuildMember(guildId, user.Id)
 	if err != nil {
 		log.Printf("Error getting discord user %s with ID %s. Error: %v\n", user.Name, user.Id, err)
@@ -22,7 +18,13 @@ func CheckIfUserBusy(discord *discordgo.Session, user *entities.User, guildId st
 		return
 	}
 
+	// Statuses of the user before the current check
+	wasBusyBefore := user.CurrentlyBusy.IsBusy
 	alreadyHasRole, _ := utils.StringInSlice(discordUser.Roles, GuildRoleMap[guildId])
+
+	// Remove role and busy status
+	user.CurrentlyBusy.BusyWith = ""
+	user.CurrentlyBusy.IsBusy = false
 
 	// Add role back if necessary
 	for _, busyTime := range user.BusyTimes {
@@ -47,7 +49,7 @@ func CheckIfUserBusy(discord *discordgo.Session, user *entities.User, guildId st
 	}
 
 	// Remove the role - they are no longer busy
-	if !user.CurrentlyBusy.IsBusy && alreadyHasRole {
+	if !wasBusyBefore && alreadyHasRole {
 		err := discord.GuildMemberRoleRemove(guildId, user.Id, GuildRoleMap[guildId])
 		if err != nil {
 			log.Printf("Error removing role %s from user %s with ID %s.\n", GuildRoleMap[guildId], user.Name, user.Id)

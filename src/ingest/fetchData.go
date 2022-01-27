@@ -8,6 +8,18 @@ import (
 	"github.com/kaspar-p/bee/src/update"
 )
 
+func GetAllSubKeysOfUsersMap(m map[string]map[string]*entities.User) []string {
+	allKeys := make([]string, 0);
+	
+	for key := range m {
+		for subkey := range m[key] {
+			allKeys = append(allKeys, subkey);
+		}
+	}
+
+	return allKeys
+}
+
 func FillMapsWithDatabaseData(guildIds []string) {
 	guildRolePairs := FetchRoleIdData(guildIds)
 	users := FetchUserData()
@@ -17,7 +29,7 @@ func FillMapsWithDatabaseData(guildIds []string) {
 		user.SortBusyTimes()
 	}
 
-	fmt.Println("Got data: \n\tUsers:", len(entities.Users), "\n\tEvents:", len(allBusyTimes), "\n\tGuild-Role pairs:", len(guildRolePairs))
+	fmt.Println("Got data: \n\tUsers:", len(GetAllSubKeysOfUsersMap(entities.Users)), "\n\tEvents:", len(allBusyTimes), "\n\tGuild-Role pairs:", len(guildRolePairs))
 }
 
 func FetchRoleIdData(guildIds []string) []dbLib.GuildRolePair {

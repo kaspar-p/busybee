@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"math/rand"
@@ -19,17 +18,17 @@ import (
 
 func HandleEnrol(discord *discordgo.Session, message *discordgo.MessageCreate) error {
 	if len(message.Attachments) != 1 {
-		_, err := discord.ChannelMessageSend(message.ChannelID, "Requires exactly 1 `.ics` file to be attached!")
+		err := SendSingleMessage(discord, message.ChannelID, "Requires exactly 1 `.ics` file to be attached!")
 
-		return errors.Wrap(err, "Error sending error message 'Requires exactly 1 `.ics` file to be attached!'.")
+		return err
 	}
 
 	// Validate that it is a .ics file
 	file := message.Attachments[0]
 	if !strings.HasSuffix(file.Filename, ".ics") {
-		_, err := discord.ChannelMessageSend(message.ChannelID, "Requires the file to be in `.ics` format!")
+		err := SendSingleMessage(discord, message.ChannelID, "Requires the file to be in `.ics` format!")
 
-		return errors.Wrap(err, "Error in sending 'requires .ics file type' error message.")
+		return err
 	}
 
 	// Download the .ics file
@@ -37,9 +36,9 @@ func HandleEnrol(discord *discordgo.Session, message *discordgo.MessageCreate) e
 	if err != nil {
 		log.Println("Error encountered when downloading: ", err)
 
-		_, err2 := discord.ChannelMessageSend(message.ChannelID, "Downloading .ics file failed. Please try again.")
+		sendErr := SendSingleMessage(discord, message.ChannelID, "Downloading .ics file failed. Please try again.")
 
-		return errors.Wrap(err2, "Error in sending 'Download failed' message.")
+		return errors.Wrap(err, sendErr.Error())
 	}
 
 	// Cleanup the file that was created
@@ -48,12 +47,12 @@ func HandleEnrol(discord *discordgo.Session, message *discordgo.MessageCreate) e
 	// Parse the .ics file into its events
 	events, err := parseCalendar(filepath)
 	if errorMessage, ok := validateCalendarFile(events, err); !ok {
-		_, err2 := discord.ChannelMessageSend(message.ChannelID, errorMessage)
+		sendErr := SendSingleMessage(discord, message.ChannelID, errorMessage)
 
-		return errors.Wrap(err2, "Error sending generic error validation message!")
+		return errors.Wrap(err, sendErr.Error())
 	}
 
-	fmt.Println("Going to ingest", len(events), "events!")
+	log.Printf("Going to ingest %d events!\n", len(events))
 
 	// Create new users and their events
 	ingest.IngestNewData(message, events)
@@ -61,9 +60,9 @@ func HandleEnrol(discord *discordgo.Session, message *discordgo.MessageCreate) e
 	// Finally, update the roles when a new user is added
 	update.UpdateSingleGuild(discord, message.GuildID)
 
-	_, err = discord.ChannelMessageSend(message.ChannelID, "you're enrolled \\:)")
+	err = SendSingleMessage(discord, message.ChannelID, "you're enrolled \\:)")
 
-	return errors.Wrap(err, "Message in response to .enrol failed to send.")
+	return err
 }
 
 func createRandomString() string {
@@ -118,7 +117,7 @@ func parseCalendar(filepath string) ([]gocal.Event, error) {
 
 	err = parser.Parse()
 	if err != nil {
-		fmt.Println("Parsing error: ", err)
+		log.Println("Parsing error: ", err)
 
 		return nil, errors.Wrap(err, "Parsing .ics file error.")
 	}
@@ -171,8 +170,8 @@ func DetermineCurrentSemester() (time.Time, time.Time) {
 func removeFile(filepath string) {
 	err := os.Remove(filepath)
 	if err != nil {
-		log.Println("Error removing file with path", filepath);
-		panic(errors.New("Error removing file with path: " + filepath));
+		log.Println("Error removing file with path", filepath)
+		panic(errors.New("Error removing file with path: " + filepath))
 	}
 }
 
@@ -189,7 +188,7 @@ func downloadFile(url string) (string, error) {
 
 	output, err := os.Create(filepath)
 	if err != nil {
-		fmt.Printf("Error creating file at: %s. Error: %s\n", filepath, err)
+		log.Printf("Error creating file at: %s. Error: %s\n", filepath, err)
 
 		return "", errors.Wrap(err, "Error creating file.")
 	}
@@ -197,7 +196,7 @@ func downloadFile(url string) (string, error) {
 
 	_, err = io.Copy(output, response.Body)
 	if err != nil {
-		fmt.Println("Copying response body to file buffer failed. Error: ", err)
+		log.Println("Copying response body to file buffer failed. Error: ", err)
 
 		return "", errors.Wrap(err, "Error copying to output file from output stream.")
 	}
@@ -239,14 +238,14 @@ func downloadFile(url string) (string, error) {
 
 // 	// Register commands again as new
 // 	createdCommands, _ = discord.ApplicationCommandBulkOverwrite(discord.State.User.ID, GuildID, commands);
-// 	fmt.Println("Successfully registered commands!");
+// 	log.Println("Successfully registered commands!");
 // }
 
 // func handleEnrolment(discord *discordgo.Session, interaction *discordgo.InteractionCreate) {
 // 	println("Begin handling!");
-// 	fmt.Println(interaction.Message);
-// 	fmt.Println(interaction.Data)
-// 	fmt.Println(interaction.Message.Attachments);
+// 	log.Println(interaction.Message);
+// 	log.Println(interaction.Data)
+// 	log.Println(interaction.Message.Attachments);
 
 // 	discord.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 // 		Type: discordgo.InteractionResponseChannelMessageWithSource,

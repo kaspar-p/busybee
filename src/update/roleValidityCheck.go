@@ -1,7 +1,7 @@
 package update
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/kaspar-p/bee/src/database"
@@ -19,16 +19,16 @@ func HandleZeroRoleId(discord *discordgo.Session, guildId string) {
 }
 
 func HandleOneRoleId(discord *discordgo.Session, guildId, roleId string) {
-	fmt.Println("Processing single role ID", roleId)
+	log.Println("Processing single role ID", roleId)
 	// Check if the ID is in the GuildRoleMap - if not, reset it
 	if roleId != GuildRoleMap[guildId] {
-		fmt.Println("Role ID wasn't in the GuildRoleMap, updating map.")
+		log.Println("Role ID wasn't in the GuildRoleMap, updating map.")
 		ChangeGuildRoleMapEntry(guildId, roleId)
 	}
 
 	// If the role ID is NOT in discord - then create it and change the GuildRoleMap
 	if !IsRoleIdInGuild(discord, guildId, roleId) {
-		fmt.Printf("\t\t->Role ID '%s' not in discord. Creating it!\n", roleId)
+		log.Printf("\t\t->Role ID '%s' not in discord. Creating it!\n", roleId)
 
 		newRoleId := CreateRoleInDiscord(discord, guildId)
 
@@ -36,7 +36,7 @@ func HandleOneRoleId(discord *discordgo.Session, guildId, roleId string) {
 		database.DatabaseInstance.UpdateGuildRolePairWithNewRole(guildId, roleId, newRoleId)
 	}
 
-	fmt.Println("Finished processing single role ID")
+	log.Println("Finished processing single role ID")
 }
 
 func HandleTwoPlusRoleIds(discord *discordgo.Session, guildId string, roleIds []string) {
@@ -49,22 +49,22 @@ func HandleTwoPlusRoleIds(discord *discordgo.Session, guildId string, roleIds []
 	// Remove the information about the other entries
 	for _, roleId := range rest {
 		if IsRoleIdInGuild(discord, guildId, roleId) {
-			fmt.Println("Deleting extra role found in discord:", roleId)
+			log.Printf("Deleting extra role found in discord: %s.\n", roleId)
 			DeleteRoleFromDiscord(discord, guildId, roleId)
-			fmt.Printf("Reassigning users from role %s to role %s.\n", roleId, chosenId)
+			log.Printf("Reassigning users from role %s to role %s.\n", roleId, chosenId)
 			ReassignRoles(discord, guildId, roleId, chosenId)
 		}
 
-		fmt.Println("Deleting extra role found in database:", roleId)
+		log.Println("Deleting extra role found in database:", roleId)
 		DeleteGuildRolePairFromDatabase(guildId, roleId)
 	}
 }
 
 func RunRoleValidityCheck(discord *discordgo.Session, guildId string) {
-	fmt.Printf("\tBeginning cleanup process for guild %s!\n", guildId)
+	log.Printf("\tBeginning cleanup process for guild %s!\n", guildId)
 
 	dbRoleIds := database.DatabaseInstance.GetRoleIdsForGuild(guildId)
-	fmt.Printf("Cleanup process found %d role IDs for this guild %s\n", len(dbRoleIds), guildId)
+	log.Printf("Cleanup process found %d role IDs for this guild %s\n", len(dbRoleIds), guildId)
 
 	switch len(dbRoleIds) {
 	case 0:
@@ -75,5 +75,5 @@ func RunRoleValidityCheck(discord *discordgo.Session, guildId string) {
 		HandleTwoPlusRoleIds(discord, guildId, dbRoleIds)
 	}
 
-	fmt.Println("Ending cleanup process!")
+	log.Println("Ending cleanup process!")
 }

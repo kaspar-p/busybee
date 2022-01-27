@@ -1,8 +1,8 @@
 package database
 
 import (
-	"fmt"
 	"log"
+	"time"
 
 	"github.com/kaspar-p/bee/src/entities"
 	"github.com/pkg/errors"
@@ -19,43 +19,50 @@ func CreateBusyTimesDocuments(busyTimes []*entities.BusyTime) []interface{} {
 	return busyTimesDocuments
 }
 
+func GetStringValueFromDocument(result bson.M, key string) string {
+	resultString, found := result[key].(string)
+	if !found {
+		log.Printf("No string with key %s found in GetBusyTimes()!\n", key)
+		panic(&GetBusyTimeError{})
+	}
+
+	return resultString
+}
+
+func GetAndConvertTimeFromDocument(result bson.M, key string) time.Time {
+	var resultTime time.Time
+
+	interfaceTime, found := result[key]
+	if !found {
+		log.Panic("No end time found in GetBusyTimes()")
+		panic(&GetBusyTimeError{})
+	}
+
+	if interfaceTime, ok := interfaceTime.(primitive.DateTime); !ok {
+		log.Printf("Interface time with name %s and value %v is not convertible to primitive.Datetime!", key, interfaceTime)
+		panic(&GetBusyTimeError{})
+	} else {
+		resultTime = interfaceTime.Time()
+	}
+
+	return resultTime
+}
+
 func CreateBusyTimeFromResult(result bson.M) entities.BusyTime {
-	guildId, found := result["BelongsTo"].(string)
-	if !found {
-		log.Panic("No Guild ID found in GetBusyTimes()")
-	}
-
-	ownerId, found := result["OwnerId"].(string)
-	if !found {
-		log.Panic("No owner ID found in GetBusyTimes()")
-	}
-
-	title, found := result["Title"].(string)
-	if !found {
-		log.Panic("No title found in GetBusyTimes()")
-	}
-
-	start, found := result["Start"]
-	if !found {
-		log.Panic("No start time found in GetBusyTimes()")
-		panic(&GetBusyTimeError{})
-	}
-
-	end, found := result["End"]
-	if !found {
-		log.Panic("No start time found in GetBusyTimes()")
-		panic(&GetBusyTimeError{})
-	}
+	guildId := GetStringValueFromDocument(result, "BelongsTo")
+	ownerId := GetStringValueFromDocument(result, "OwnerId")
+	title := GetStringValueFromDocument(result, "Title")
+	startTime := GetAndConvertTimeFromDocument(result, "Start")
+	endTime := GetAndConvertTimeFromDocument(result, "End")
 
 	// Create new busyTime
-	newBusyTime := entities.CreateBusyTime(ownerId, guildId, title,
-		start.(primitive.DateTime).Time(), end.(primitive.DateTime).Time())
+	newBusyTime := entities.CreateBusyTime(ownerId, guildId, title, startTime, endTime)
 
 	return newBusyTime
 }
 
 func (database *Database) OverwriteUserBusyTimes(user *entities.User, busyTimes []*entities.BusyTime) {
-	fmt.Println("Overwriting user", user.Name, "busy times with "+fmt.Sprint(len(busyTimes))+" busy times.")
+	log.Printf("Overwriting user %s busy times with %d busy times.\n", user.Name, len(busyTimes))
 
 	// Delete all of the busy times associated with that user
 	filter := bson.D{
@@ -70,7 +77,7 @@ func (database *Database) OverwriteUserBusyTimes(user *entities.User, busyTimes 
 		return
 	}
 
-	fmt.Println("Found and deleted", deleteResult.DeletedCount, "events tied to user", user.Name)
+	log.Printf("Found and deleted %d events tied to user %s", deleteResult.DeletedCount, user.Name)
 
 	// Add the new busy times
 	database.AddBusyTimes(busyTimes)
@@ -85,7 +92,7 @@ func (database *Database) AddBusyTimes(busyTimes []*entities.BusyTime) {
 
 	_, err := database.busyTimes.InsertMany(database.context, busyTimesDocuments)
 	if err != nil {
-		log.Panic("Error inserting busy times: ", busyTimesDocuments, ". Error: ", err)
+		log.Println("Error inserting busy times: ", busyTimesDocuments, ". Error: ", err)
 		panic(&AddBusyTimeError{Err: err})
 	}
 }
@@ -97,7 +104,7 @@ func (database *Database) RemoveAllBusyTimesInGuild(guildId string) error {
 
 	filter := bson.D{{Key: "BelongsTo", Value: guildId}}
 	deleteResult, err := database.busyTimes.DeleteMany(database.context, filter)
-	fmt.Println("Deleted", deleteResult.DeletedCount, "users that belonged to guild", guildId)
+	log.Printf("Deleted %d users that belonged to guild %s.\n", deleteResult.DeletedCount, guildId)
 
 	return errors.Wrap(err, "Error deleting all busy times from a guild")
 }
@@ -105,13 +112,13 @@ func (database *Database) RemoveAllBusyTimesInGuild(guildId string) error {
 func (database *Database) GetBusyTimes() []*entities.BusyTime {
 	cursor, err := database.busyTimes.Find(database.context, bson.D{{}})
 	if err != nil {
-		log.Panic("Error getting cursor when finding all busyTimes objects. Error: ", err)
+		log.Println("Error getting cursor when finding all busyTimes objects. Error: ", err)
 		panic(&GetBusyTimeError{Err: err})
 	}
 
 	var results []bson.M
 	if err = cursor.All(database.context, &results); err != nil {
-		log.Panic("Error getting results from cursor when getting all busyTimes objects. Error: ", err)
+		log.Println("Error getting results from cursor when getting all busyTimes objects. Error: ", err)
 		panic(&GetBusyTimeError{Err: err})
 	}
 

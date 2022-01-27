@@ -1,7 +1,6 @@
 package update
 
 import (
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -26,7 +25,7 @@ func CheckIfUserBusy(discord *discordgo.Session, user *entities.User, guildId st
 
 		// Check if now is within the bounds of the event
 		if busyTime.Start.Before(now) && busyTime.End.After(now) {
-			fmt.Printf("\t\tUser %s has something going on right now: %s\n", user.Name, busyTime.Title)
+			log.Printf("\t\tUser %s has something going on right now: %s\n", user.Name, busyTime.Title)
 			user.CurrentlyBusy.IsBusy = true
 			user.CurrentlyBusy.BusyWith = busyTime.Title
 
@@ -41,24 +40,24 @@ func CheckIfUserBusy(discord *discordgo.Session, user *entities.User, guildId st
 }
 
 func UpdateSingleGuild(discord *discordgo.Session, guildId string) {
-	fmt.Printf("Updating roles for guild %s and users: %d\n", guildId, len(entities.Users[guildId]))
+	log.Printf("Updating roles for guild %s and users: %d\n", guildId, len(entities.Users[guildId]))
 
 	// For each user with a ID in the `users` map, change their role for the current time
 
 	for _, user := range entities.Users[guildId] {
 		if user.BelongsTo == guildId {
-			fmt.Printf("\tUser %s has %d busy times!\n", user.Name, len(user.BusyTimes))
+			log.Printf("\tUser %s has %d busy times!\n", user.Name, len(user.BusyTimes))
 
 			// Check if the user should change busy status
 			CheckIfUserBusy(discord, user, guildId)
 		} else {
-			fmt.Printf("This shouldn't happen! User %s has guildId %s but should have %s.\n", user.Name, user.BelongsTo, guildId)
+			log.Printf("This shouldn't happen! User %s has guildId %s but should have %s.\n", user.Name, user.BelongsTo, guildId)
 		}
 	}
 }
 
 func ValidateAllGuilds(discord *discordgo.Session) {
-	fmt.Println("--------------------------- VALIDATING ALL GUILDS ----------------------------")
+	log.Println("--------------------------- VALIDATING ALL GUILDS ----------------------------")
 
 	var waitGroup sync.WaitGroup
 
@@ -70,13 +69,13 @@ func ValidateAllGuilds(discord *discordgo.Session) {
 			defer waitGroup.Done()
 
 			// Run the process
-			fmt.Printf("Validating data for guild %s and users: %d\n", guildId, len(entities.Users[guildId]))
+			log.Printf("Validating data for guild %s and users: %d\n", guildId, len(entities.Users[guildId]))
 			RunRoleValidityCheck(discord, guildId)
 		}(discord, guildId)
 	}
 	// Wait for all validity checks to run
 	waitGroup.Wait()
-	fmt.Println("------------------------------------------------------------------------------")
+	log.Println("------------------------------------------------------------------------------")
 }
 
 func UpdateAllGuilds(discord *discordgo.Session) {
@@ -84,14 +83,14 @@ func UpdateAllGuilds(discord *discordgo.Session) {
 	// Keep false until there is a mechanism for detecting disconnects from discord
 	performValidation := false
 	if performValidation {
-		ValidateAllGuilds(discord);
+		ValidateAllGuilds(discord)
 	}
 
-	fmt.Println("---------------------------- UPDATING ALL GUILDS -----------------------------")
+	log.Println("---------------------------- UPDATING ALL GUILDS -----------------------------")
 
 	for guildId := range GuildRoleMap {
 		UpdateSingleGuild(discord, guildId)
 	}
 
-	fmt.Println("------------------------------------------------------------------------------")
+	log.Println("------------------------------------------------------------------------------")
 }

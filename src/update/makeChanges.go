@@ -1,7 +1,6 @@
 package update
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/bwmarrin/discordgo"
@@ -15,8 +14,9 @@ func ReassignRoles(discord *discordgo.Session, guildId, oldRoleId, newRoleId str
 
 	members, err := discord.GuildMembers(guildId, "", defaultLimit)
 	if err != nil {
-		log.Panic("Error getting members while reassigning roles in guild", guildId, "from role", oldRoleId, "to role", newRoleId)
-		log.Panic("Error: ", err)
+		log.Printf("Error getting members while reassigning roles in guild %s from role %s to role %s.\n",
+			guildId, oldRoleId, newRoleId)
+		log.Println("Error: ", err)
 
 		panic(&database.RemoveGuildRolePairError{})
 	}
@@ -64,7 +64,7 @@ func ChangeGuildRoleMapEntry(guildId, newRoleId string) {
 
 func CreateRoleInDiscord(discord *discordgo.Session, guildId string) string {
 	// There was no "busy" role - create one
-	fmt.Println("Creating busy role in guild: ", guildId)
+	log.Println("Creating busy role in guild: ", guildId)
 
 	newRole, err := discord.GuildRoleCreate(guildId)
 	if err != nil {

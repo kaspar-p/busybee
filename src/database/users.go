@@ -1,7 +1,6 @@
 package database
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/kaspar-p/bee/src/entities"
@@ -16,7 +15,7 @@ func (database *Database) RemoveAllUsersInGuild(guildId string) error {
 
 	filter := bson.D{{Key: "BelongsTo", Value: guildId}}
 	deleteResult, err := database.users.DeleteMany(database.context, filter)
-	fmt.Println("Deleted", deleteResult.DeletedCount, "users that belonged to guild", guildId)
+	log.Println("Deleted", deleteResult.DeletedCount, "users that belonged to guild", guildId)
 
 	return errors.Wrap(err, "Error removing all users from guild!")
 }

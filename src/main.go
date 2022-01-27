@@ -21,8 +21,8 @@ func main() {
 	// Initialize the bot
 	discord, err := discordgo.New("Bot " + constants.BotToken)
 	if err != nil {
-		log.Println("Error creating discord session: ", err);
-		panic(err);
+		log.Println("Error creating discord session: ", err)
+		panic(err)
 	}
 
 	// Add handlers
@@ -47,7 +47,7 @@ func main() {
 	})
 	if err != nil {
 		log.Println("Error adding CRON job! Error: ", err)
-		panic(err);
+		panic(err)
 	}
 
 	cronScheduler.Start()

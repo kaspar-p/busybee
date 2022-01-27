@@ -1,7 +1,6 @@
 package database
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/pkg/errors"
@@ -109,7 +108,8 @@ func (database *Database) RemoveGuildRolePairByGuildAndRole(guildId, roleId stri
 		{Key: "RoleId", Value: roleId},
 	}
 	_, err := database.busyTimes.DeleteOne(database.context, filter)
-	fmt.Printf("Deleted GuildRolePair that belonged to guild %s and role %s.\n", guildId, roleId)
+
+	log.Printf("Deleted GuildRolePair that belonged to guild %s and role %s.\n", guildId, roleId)
 
 	return errors.Wrap(err, "Error removing guild-role by both guild ID and role ID!")
 }
@@ -121,7 +121,8 @@ func (database *Database) RemoveGuildRolePairByGuild(guildId string) error {
 
 	filter := bson.D{{Key: "GuildId", Value: guildId}}
 	_, err := database.busyTimes.DeleteOne(database.context, filter)
-	fmt.Println("Deleted GuildRolePair that belonged to guild", guildId)
+
+	log.Println("Deleted GuildRolePair that belonged to guild", guildId)
 
 	return errors.Wrap(err, "Error removing guild-role pair by guild ID.")
 }
@@ -184,5 +185,5 @@ func (database *Database) UpdateGuildRolePairWithNewRole(guildId, oldRoleId, new
 		return
 	}
 
-	fmt.Println("Updated", updateResult.ModifiedCount, "guild-role pairs with a new ID")
+	log.Println("Updated", updateResult.ModifiedCount, "guild-role pairs with a new ID")
 }

@@ -1,7 +1,7 @@
 package ingest
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/apognu/gocal"
 	"github.com/bwmarrin/discordgo"
@@ -18,11 +18,11 @@ func IngestNewData(message *discordgo.MessageCreate, events []gocal.Event) {
 
 func GetOrCreateUser(userId, userName, guildId string) *entities.User {
 	if user, ok := entities.Users[guildId][userId]; ok {
-		fmt.Println("User found with ID: ", userId)
+		log.Println("User found with ID: ", userId)
 
 		return user
 	} else {
-		fmt.Println("User created with ID:", userId)
+		log.Println("User created with ID:", userId)
 		// Create the new user
 		user := entities.CreateUser(userName, userId, guildId)
 
@@ -39,6 +39,7 @@ func GetOrCreateUser(userId, userName, guildId string) *entities.User {
 func OverwriteUserEvents(user *entities.User, events []gocal.Event) {
 	// Overwrite the busyTimes in memory
 	user.BusyTimes = make([]*entities.BusyTime, 0)
+
 	for i := 0; i < len(events); i++ {
 		event := events[i]
 

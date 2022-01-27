@@ -1,7 +1,7 @@
 package ingest
 
 import (
-	"fmt"
+	"log"
 
 	dbLib "github.com/kaspar-p/bee/src/database"
 	"github.com/kaspar-p/bee/src/entities"
@@ -9,11 +9,11 @@ import (
 )
 
 func GetAllSubKeysOfUsersMap(m map[string]map[string]*entities.User) []string {
-	allKeys := make([]string, 0);
-	
+	allKeys := make([]string, 0)
+
 	for key := range m {
 		for subkey := range m[key] {
-			allKeys = append(allKeys, subkey);
+			allKeys = append(allKeys, subkey)
 		}
 	}
 
@@ -29,7 +29,10 @@ func FillMapsWithDatabaseData(guildIds []string) {
 		user.SortBusyTimes()
 	}
 
-	fmt.Println("Got data: \n\tUsers:", len(GetAllSubKeysOfUsersMap(entities.Users)), "\n\tEvents:", len(allBusyTimes), "\n\tGuild-Role pairs:", len(guildRolePairs))
+	log.Println("Got data: \n\tUsers:", len(GetAllSubKeysOfUsersMap(entities.Users)),
+		"\n\tEvents:", len(allBusyTimes),
+		"\n\tGuild-Role pairs:", len(guildRolePairs),
+	)
 }
 
 func FetchRoleIdData(guildIds []string) []dbLib.GuildRolePair {

@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -17,46 +17,50 @@ func toNiceTimeString(eventTime time.Time) string {
 func HandleWyd(discord *discordgo.Session, message *discordgo.MessageCreate) error {
 	expectedArgumentNum := 2
 	if len(strings.Split(message.Content, " ")) != expectedArgumentNum {
-		fmt.Println("Free command had false arguments")
-		discord.ChannelMessageSend(message.ChannelID,
-			"command must have a single argument of the @ of a user \\:)")
+		log.Println("Free command had false arguments")
 
-		return nil
+		err := SendSingleMessage(discord, message.ChannelID, "command must have a single argument of the @ of a user \\:)")
+
+		return err
 	}
 
 	expectedMentions := 1
 	if len(message.Mentions) != expectedMentions {
-		fmt.Println("Free command had false arguments")
-		discord.ChannelMessageSend(message.ChannelID,
-			"command must have a single argument of the @ of a user \\:)")
+		log.Println("Free command had false arguments")
 
-		return nil
+		err := SendSingleMessage(discord, message.ChannelID, "command must have a single argument of the @ of a user \\:)")
+
+		return err
 	}
 
 	mentionedId := message.Mentions[0].ID
 
 	if mentionedId == discord.State.User.ID {
-		fmt.Println("Asked the bot wyd!")
-		discord.ChannelMessageSend(message.ChannelID, "nothing much \\;)")
+		log.Println("Asked the bot wyd!")
 
-		return nil
+		err := SendSingleMessage(discord, message.ChannelID, "nothing much \\;)")
+
+		return err
 	}
 
 	if _, ok := entities.Users[message.GuildID][mentionedId]; !ok {
-		fmt.Println("Unknown user")
-		discord.ChannelMessageSend(message.ChannelID,
-			"that user does not exist within the system. please ask them to enrol \\:)")
+		log.Printf("Requirement failed - sending error message %s.\n", "user DNE")
 
-		return nil
+		err := SendSingleMessage(discord,
+			message.ChannelID,
+			"that user does not exist within the system. please ask them to enrol \\:)",
+		)
+
+		return err
 	}
 
 	mentionedUser := entities.Users[message.GuildID][mentionedId]
 	busyTimesToday := mentionedUser.GetTodaysEvents()
 
 	if len(busyTimesToday) == 0 {
-		discord.ChannelMessageSend(message.ChannelID, "nothing going on for the rest of today :)")
+		err := SendSingleMessage(discord, message.ChannelID, "nothing going on for the rest of today :)")
 
-		return nil
+		return err
 	}
 
 	embed := GenerateWydEmbed(busyTimesToday, mentionedUser)

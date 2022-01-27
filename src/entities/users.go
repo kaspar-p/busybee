@@ -1,7 +1,7 @@
 package entities
 
 import (
-	"fmt"
+	"log"
 	"sort"
 	"time"
 
@@ -67,7 +67,7 @@ func (user *User) GetTodaysEvents() []*BusyTime {
 		if busyTime.Start.After(beginningOfDay) &&
 			busyTime.End.Before(endOfDay) &&
 			busyTime.End.After(time.Now()) {
-			fmt.Println("Adding event", busyTime.Title, "starting at:", busyTime.Start, "and ending at:", busyTime.End)
+			log.Println("Adding event", busyTime.Title, "starting at:", busyTime.Start, "and ending at:", busyTime.End)
 			todaysEvents = append(todaysEvents, busyTime)
 		}
 	}
@@ -77,7 +77,7 @@ func (user *User) GetTodaysEvents() []*BusyTime {
 		return todaysEvents[i].Start.Unix() < todaysEvents[j].Start.Unix()
 	})
 
-	fmt.Println("Today's events for user", user.Name, "are:", todaysEvents)
+	log.Println("Today's events for user", user.Name, "are:", todaysEvents)
 
 	return todaysEvents
 }

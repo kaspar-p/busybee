@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"log"
 	"math"
 	"strings"
 	"time"
@@ -9,7 +10,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/kaspar-p/bee/src/entities"
 	"github.com/kaspar-p/bee/src/utils"
-	"github.com/pkg/errors"
 )
 
 type TimePair struct {
@@ -75,7 +75,13 @@ func getNextCommonFreeNumberOfHoursTwo(user1, user2 *entities.User, numberOfHour
 		user1NextStartFreeTime, foundStart1 := getNextFreeIntervalOfSize(user1, startTime, numberOfHours)
 		user2NextStartFreeTime, foundStart2 := getNextFreeIntervalOfSize(user2, startTime, numberOfHours)
 
-		fmt.Printf("# hours: %d. # hour offset: %d. user1 next free start time %v, user 2 next free start time %v\n", numberOfHours, numberOfHours, user1NextStartFreeTime.Format(time.Layout), user2NextStartFreeTime.Format(time.Layout))
+		log.Printf(
+			"# hours: %d. # hour offset: %d. user1 next free start time %v, user 2 next free start time %v\n",
+			numberOfHours,
+			numberOfHours,
+			user1NextStartFreeTime.Format(time.Layout),
+			user2NextStartFreeTime.Format(time.Layout),
+		)
 
 		// Exit if they are not free at all for this number of hours
 		if !foundStart1 || !foundStart2 {
@@ -138,10 +144,10 @@ func toNiceDateTimeString(eventTime time.Time) string {
 func HandleWhenFree(discord *discordgo.Session, message *discordgo.MessageCreate) error {
 	errorMessage := validateStructure(message)
 	if errorMessage != "" {
-		fmt.Println("Command .whenFree error with message:", errorMessage)
-		discord.ChannelMessageSend(message.ChannelID, errorMessage)
+		log.Println("Command .whenFree error with message:", errorMessage)
+		err := SendSingleMessage(discord, message.ChannelID, errorMessage)
 
-		return nil
+		return err
 	}
 
 	// Convert mentions into 'User's
@@ -149,12 +155,16 @@ func HandleWhenFree(discord *discordgo.Session, message *discordgo.MessageCreate
 
 	for _, mentionedUser := range message.Mentions {
 		if user, ok := entities.Users[message.GuildID][mentionedUser.ID]; ok {
-			fmt.Println("Got mentioned user", user.Name)
+			log.Println("Got mentioned user", user.Name)
 			mentionedUsers = append(mentionedUsers, user)
 		} else {
-			discord.ChannelMessageSend(message.ChannelID, "the @ mentioned user `"+mentionedUser.Username+"` isn't in the system. ask them to enrol pls \\:)")
+			err := SendSingleMessage(
+				discord,
+				message.ChannelID,
+				"the @ mentioned user `"+mentionedUser.Username+"` isn't in the system. ask them to enrol pls \\:)",
+			)
 
-			return nil
+			return err
 		}
 	}
 
@@ -179,9 +189,9 @@ func HandleWhenFree(discord *discordgo.Session, message *discordgo.MessageCreate
 	}
 
 	embed := GenerateWhenFreeEmbed(timePairs)
-	_, err := discord.ChannelMessageSendEmbed(message.ChannelID, embed)
+	err := SendSingleEmbed(discord, message.ChannelID, embed)
 
-	return errors.Wrap(err, "Error sending response to .whenfree message")
+	return err
 }
 
 func GenerateWhenFreeEmbed(timePairs []TimePair) *discordgo.MessageEmbed {

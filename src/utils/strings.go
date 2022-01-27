@@ -1,13 +1,18 @@
 package utils
 
-func StringInSlice(list []string, value string) (bool, int) {
+func StringInSlice(list []string, value string) (isIn bool, foundIndex int) {
+	isIn = false
+
 	for index, element := range list {
 		if value == element {
-			return true, index
+			isIn = true
+			foundIndex = index
+
+			break
 		}
 	}
 
-	return false, 0
+	return isIn, foundIndex
 }
 
 func RemoveStringFromSlice(array []string, value string) []string {

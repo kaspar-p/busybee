@@ -1,9 +1,10 @@
 package commands
 
 import (
+	"crypto/rand"
+	"encoding/base32"
 	"io"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
 	"strings"
@@ -66,16 +67,15 @@ func HandleEnrol(discord *discordgo.Session, message *discordgo.MessageCreate) e
 }
 
 func createRandomString() string {
-	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
-	alphabet := "abcdefghijklmnopqrstuvwxyz"
-	length := 20
+	stringLength := 20
+	randomBytes := make([]byte, stringLength)
 
-	randBytes := make([]byte, length)
-	for i := range randBytes {
-		randBytes[i] = alphabet[seededRand.Intn(len(alphabet))]
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		panic(err)
 	}
 
-	return string(randBytes)
+	return base32.StdEncoding.EncodeToString(randomBytes)[:stringLength]
 }
 
 func validateCalendarFile(events []gocal.Event, err error) (message string, ok bool) {
@@ -125,7 +125,7 @@ func parseCalendar(filepath string) ([]gocal.Event, error) {
 	return parser.Events, nil
 }
 
-func DetermineCurrentSemester() (time.Time, time.Time) {
+func DetermineCurrentSemester() (start, end time.Time) {
 	semesters := map[string]string{
 		"January":   "Winter",
 		"February":  "Winter",
@@ -149,8 +149,6 @@ func DetermineCurrentSemester() (time.Time, time.Time) {
 	}
 
 	currentSemester := semesters[now.Month().String()]
-
-	var start, end time.Time
 
 	switch currentSemester {
 	case "Winter":

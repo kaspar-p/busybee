@@ -1,6 +1,8 @@
 package database
 
 import (
+	"context"
+	"fmt"
 	"log"
 
 	"github.com/pkg/errors"
@@ -28,7 +30,7 @@ func (database *Database) GetRoleIdsForGuilds(guildIds []string) []GuildRolePair
 		}},
 	}}
 
-	cursor, err := database.guilds.Find(database.context, filter)
+	cursor, err := database.guilds.Find(context.Background(), filter)
 	if err != nil {
 		log.Panic("Error getting cursor when finding all users. Error: ", err)
 		panic(&GetUserError{Err: err})
@@ -36,7 +38,7 @@ func (database *Database) GetRoleIdsForGuilds(guildIds []string) []GuildRolePair
 
 	var results []bson.M
 
-	if err = cursor.All(database.context, &results); err != nil {
+	if err = cursor.All(context.Background(), &results); err != nil {
 		log.Panic("Error getting results from cursor when getting all users. Error: ", err)
 		panic(&GetUserError{Err: err})
 	}
@@ -71,14 +73,14 @@ func (database *Database) GetRoleIdsForGuild(guildId string) []string {
 		{Key: "GuildId", Value: guildId},
 	}
 
-	cursor, err := database.guilds.Find(database.context, filter)
+	cursor, err := database.guilds.Find(context.Background(), filter)
 	if err != nil {
 		log.Panic("Error getting cursor when finding all users. Error: ", err)
 		panic(&GetGuildRolePairError{Err: err})
 	}
 
 	var results []bson.M
-	if err = cursor.All(database.context, &results); err != nil {
+	if err = cursor.All(context.Background(), &results); err != nil {
 		log.Panic("Error getting results from cursor when getting all users. Error: ", err)
 		panic(&GetGuildRolePairError{Err: err})
 	}
@@ -107,7 +109,7 @@ func (database *Database) RemoveGuildRolePairByGuildAndRole(guildId, roleId stri
 		{Key: "GuildId", Value: guildId},
 		{Key: "RoleId", Value: roleId},
 	}
-	_, err := database.busyTimes.DeleteOne(database.context, filter)
+	_, err := database.busyTimes.DeleteOne(context.Background(), filter)
 
 	log.Printf("Deleted GuildRolePair that belonged to guild %s and role %s.\n", guildId, roleId)
 
@@ -120,7 +122,7 @@ func (database *Database) RemoveGuildRolePairByGuild(guildId string) error {
 	}
 
 	filter := bson.D{{Key: "GuildId", Value: guildId}}
-	_, err := database.busyTimes.DeleteOne(database.context, filter)
+	_, err := database.busyTimes.DeleteOne(context.Background(), filter)
 
 	log.Println("Deleted GuildRolePair that belonged to guild", guildId)
 
@@ -131,7 +133,7 @@ func (database *Database) IsGuildInPairMap(guildId string) bool {
 	filter := bson.D{{Key: "GuildID", Value: guildId}}
 
 	var result GuildRolePair
-	err := database.guilds.FindOne(database.context, filter).Decode(&result)
+	err := database.guilds.FindOne(context.Background(), filter).Decode(&result)
 
 	switch {
 	case errors.Is(err, mongo.ErrNoDocuments):
@@ -139,9 +141,9 @@ func (database *Database) IsGuildInPairMap(guildId string) bool {
 
 		return false
 	case err != nil:
-		log.Panic("Error found when getting single guild pair!")
-		// TODO: find a better way of handling an error case!
-		return false
+		log.Println("Error found when getting single guild pair: ", err)
+
+		panic(errors.Wrap(err, "Error found when getting single guild pair"))
 	default:
 		return true
 	}
@@ -159,7 +161,7 @@ func (database *Database) AddGuildRolePair(guildId, roleId string) {
 
 	pairDocument := guildRolePair.ConvertGuildRolePairToDocument()
 
-	_, err := database.guilds.InsertOne(database.context, pairDocument)
+	_, err := database.guilds.InsertOne(context.Background(), pairDocument)
 	if err != nil {
 		log.Panic("Error inserting guild role pair: ", pairDocument, ". Error: ", err)
 		panic(&AddGuildRolePairError{Err: err})
@@ -177,12 +179,13 @@ func (database *Database) UpdateGuildRolePairWithNewRole(guildId, oldRoleId, new
 	}
 	update := bson.D{{Key: "RoleId", Value: newRoleId}}
 
-	updateResult, err := database.guilds.UpdateOne(database.context, filter, update)
+	updateResult, err := database.guilds.UpdateOne(context.Background(), filter, update)
 	if err != nil {
-		log.Panicf("Error while updating guild-role pair with a new role. Guild ID: %s, "+
+		log.Printf("Error while updating guild-role pair with a new role. Guild ID: %s, "+
 			"Old role ID: %s, New role ID: %s. Error: %v.\n", guildId, oldRoleId, newRoleId, err)
-		// TODO: find a better way of handling this error case
-		return
+
+		panic(errors.Wrap(err, fmt.Sprintf("Error while updating guild-role pair with a new role. Guild ID: %s, "+
+			"Old role ID: %s, New role ID: %s. Error: %v.\n", guildId, oldRoleId, newRoleId, err)))
 	}
 
 	log.Println("Updated", updateResult.ModifiedCount, "guild-role pairs with a new ID")

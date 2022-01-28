@@ -41,7 +41,7 @@ func HandleCommand(discord *discordgo.Session, message *discordgo.MessageCreate)
 		if strings.Split(message.Content, " ")[0] != command {
 			log.Println("Wrong command, prefix matched tho.")
 
-			_, err := discord.ChannelMessageSend(message.ChannelID, "Wrong command. Did you mean`"+command+"`?")
+			err := SendSingleMessage(discord, message.ChannelID, "Wrong command. Did you mean`"+command+"`?")
 			if err != nil {
 				log.Println("Error: error sending 'wrong command' message: ", err)
 
@@ -57,14 +57,16 @@ func HandleCommand(discord *discordgo.Session, message *discordgo.MessageCreate)
 		err := handler(discord, message)
 		if err != nil {
 			log.Printf("Error encountered while executing command %s. Error: %v.\n", command, err)
-			_, err := discord.ChannelMessageSend(message.ChannelID, "error while dealing with "+command+" \\:(")
 
+			err := SendSingleMessage(discord, message.ChannelID, "error while dealing with "+command+" \\:(")
 			if err != nil {
-				log.Println("Error while sending error message for general handler failure: ", err)
+				log.Println("Error: error sending 'wrong command' message: ", err)
 
 				return
 			}
 		}
+
+		return
 	}
 }
 
@@ -98,13 +100,15 @@ func BotJoinedNewGuild(discord *discordgo.Session, event *discordgo.GuildCreate)
 		return
 	} else {
 		log.Println("Bot has joined a new guild with guildId: ", event.Guild.ID)
+		// CREATION OF A ROLE CODE
+
+		// Creates a role - adds it to database and GuildRoleMap
+		// update.CreateRole(discord, event.Guild.ID)
+
+		// Populate that in the users map
+		// entities.Users[event.Guild.ID] = make(map[string]*entities.User)
+		log.Println("-> Not doing anything about it, though.")
 	}
-
-	// // Creates a role - adds it to database and GuildRoleMap
-	// update.CreateRole(discord, event.Guild.ID)
-
-	// // Populate that in the users map
-	// entities.Users[event.Guild.ID] = make(map[string]*entities.User)
 }
 
 func BotRemovedFromGuild(discord *discordgo.Session, event *discordgo.GuildDelete) {
@@ -144,12 +148,10 @@ func BotRemovedFromGuild(discord *discordgo.Session, event *discordgo.GuildDelet
 	}
 
 	// Remove all data in memory
-	// TODO: rework for store structure
 
 	// Delete users
 	delete(entities.Users, guildId)
 
 	// Delete GuildRolePair
-	// TODO: rework for store[guildId] structure
 	delete(update.GuildRoleMap, guildId)
 }

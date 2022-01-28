@@ -12,12 +12,13 @@ import (
 	"github.com/robfig/cron"
 )
 
-func init() {
+func main() {
+	// Initialize constants
+	log.Println("Initialzing constants and globals.")
+
 	constants.InitializeViper()
 	update.InitializeGuildRoleMap()
-}
 
-func main() {
 	// Initialize the bot
 	discord, err := discordgo.New("Bot " + constants.BotToken)
 	if err != nil {

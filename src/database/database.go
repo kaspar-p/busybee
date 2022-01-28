@@ -12,7 +12,6 @@ import (
 )
 
 type Database struct {
-	context   context.Context
 	users     *mongo.Collection
 	busyTimes *mongo.Collection
 	guilds    *mongo.Collection
@@ -36,10 +35,9 @@ func Connect() (*mongo.Client, context.Context, context.CancelFunc) {
 }
 
 func InitializeDatabase() context.CancelFunc {
-	client, ctx, cancel := Connect()
+	client, _, cancel := Connect()
 
 	DatabaseInstance = &Database{
-		context:   ctx,
 		users:     client.Database(constants.DatabaseName).Collection(constants.UsersCollectionName),
 		busyTimes: client.Database(constants.DatabaseName).Collection(constants.BusyTimesCollectionName),
 		guilds:    client.Database(constants.DatabaseName).Collection(constants.GuildsCollectionName),

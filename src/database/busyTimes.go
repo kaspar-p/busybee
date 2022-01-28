@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"log"
 	"time"
 
@@ -70,7 +71,7 @@ func (database *Database) OverwriteUserBusyTimes(user *entities.User, busyTimes 
 		{Key: "BelongsTo", Value: user.BelongsTo},
 	}
 
-	deleteResult, err := database.busyTimes.DeleteMany(database.context, filter)
+	deleteResult, err := database.busyTimes.DeleteMany(context.Background(), filter)
 	if err != nil {
 		log.Panic("Error while deleting busy times tied to user", user.Name)
 
@@ -90,7 +91,7 @@ func (database *Database) AddBusyTimes(busyTimes []*entities.BusyTime) {
 
 	busyTimesDocuments := CreateBusyTimesDocuments(busyTimes)
 
-	_, err := database.busyTimes.InsertMany(database.context, busyTimesDocuments)
+	_, err := database.busyTimes.InsertMany(context.Background(), busyTimesDocuments)
 	if err != nil {
 		log.Println("Error inserting busy times: ", busyTimesDocuments, ". Error: ", err)
 		panic(&AddBusyTimeError{Err: err})
@@ -103,21 +104,21 @@ func (database *Database) RemoveAllBusyTimesInGuild(guildId string) error {
 	}
 
 	filter := bson.D{{Key: "BelongsTo", Value: guildId}}
-	deleteResult, err := database.busyTimes.DeleteMany(database.context, filter)
+	deleteResult, err := database.busyTimes.DeleteMany(context.Background(), filter)
 	log.Printf("Deleted %d users that belonged to guild %s.\n", deleteResult.DeletedCount, guildId)
 
 	return errors.Wrap(err, "Error deleting all busy times from a guild")
 }
 
 func (database *Database) GetBusyTimes() []*entities.BusyTime {
-	cursor, err := database.busyTimes.Find(database.context, bson.D{{}})
+	cursor, err := database.busyTimes.Find(context.Background(), bson.D{{}})
 	if err != nil {
 		log.Println("Error getting cursor when finding all busyTimes objects. Error: ", err)
 		panic(&GetBusyTimeError{Err: err})
 	}
 
 	var results []bson.M
-	if err = cursor.All(database.context, &results); err != nil {
+	if err = cursor.All(context.Background(), &results); err != nil {
 		log.Println("Error getting results from cursor when getting all busyTimes objects. Error: ", err)
 		panic(&GetBusyTimeError{Err: err})
 	}

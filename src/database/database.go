@@ -3,47 +3,43 @@ package database
 import (
 	"context"
 	"log"
-	"time"
 
-	"github.com/kaspar-p/bee/src/constants"
+	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type Database struct {
-	users     *mongo.Collection
-	busyTimes *mongo.Collection
-	guilds    *mongo.Collection
-}
-
 var DatabaseInstance *Database
 
-func Connect() (*mongo.Client, context.Context, context.CancelFunc) {
-	hoursKeepAlive := 10
-
-	clientOptions := options.Client().ApplyURI(constants.ConnectionURL)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(hoursKeepAlive)*time.Hour)
+func Connect(connectionUrl string) (*mongo.Client, context.Context) {
+	clientOptions := options.Client().ApplyURI(connectionUrl)
+	ctx := context.Background()
 
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		log.Panic("Error connecting to database: ", err)
-		cancel()
 	}
 
-	return client, ctx, cancel
+	return client, ctx
 }
 
-func InitializeDatabase() context.CancelFunc {
-	client, _, cancel := Connect()
+func InitializeDatabase(config *DatabaseConfig) (db *Database, disconnect DisconnectFunction) {
+	client, _ := Connect(config.ConnectionUrl)
 
-	DatabaseInstance = &Database{
-		users:     client.Database(constants.DatabaseName).Collection(constants.UsersCollectionName),
-		busyTimes: client.Database(constants.DatabaseName).Collection(constants.BusyTimesCollectionName),
-		guilds:    client.Database(constants.DatabaseName).Collection(constants.GuildsCollectionName),
+	disconnectFunction := func() {
+		err := client.Disconnect(context.Background())
+		if err != nil {
+			log.Println("Error encountered while disconnecting: ", err)
+			panic(errors.Wrap(err, "Error encountered while disconnecting!"))
+		}
 	}
 
-	return cancel
+	return &Database{
+		users:     client.Database(config.DatabaseName).Collection(config.CollectionNames.Users),
+		busyTimes: client.Database(config.DatabaseName).Collection(config.CollectionNames.BusyTimes),
+		guilds:    client.Database(config.DatabaseName).Collection(config.CollectionNames.Guilds),
+	}, disconnectFunction
 }
 
 func ObjectIdToString(insertedId interface{}) string {

@@ -1,9 +1,9 @@
 package test
 
 import (
-	"github.com/kaspar-p/bee/src/database"
 	discordLib "github.com/kaspar-p/bee/src/discord"
 	"github.com/kaspar-p/bee/src/environment"
+	"github.com/kaspar-p/bee/src/persist"
 )
 
 type (
@@ -22,18 +22,18 @@ func Teardown(funcs ...func()) func() {
 func SetupIntegrationTest() TeardownFunction {
 	config := environment.InitializeViper(environment.TESTING)
 
-	db, disconnect := database.InitializeDatabase(config.DatabaseConfig)
+	db, disconnect := persist.InitializeDatabase(config.DatabaseConfig)
 	discordLib.EstablishDiscordConnection(db, config.DiscordConfig)
 
 	return Teardown(disconnect)
 }
 
-func SetupDatabaseRequiredTests() (db *database.Database, td TeardownFunction) {
+func SetupDatabaseRequiredTests() (database *persist.DatabaseType, td TeardownFunction) {
 	config := environment.InitializeViper(environment.TESTING)
 
-	db, disconnect := database.InitializeDatabase(config.DatabaseConfig)
+	database, disconnect := persist.InitializeDatabase(config.DatabaseConfig)
 
 	// Potentially create new collections for these tests
 
-	return db, Teardown(disconnect)
+	return database, Teardown(disconnect)
 }

@@ -24,11 +24,11 @@ func (m Mode) String() string {
 func (m Mode) ConfigString() string {
 	switch m {
 	case PRODUCTION:
-		return "production"
+		return "PROD"
 	case DEVELOPMENT:
-		return "development"
+		return "DEV"
 	case TESTING:
-		return "testing"
+		return "TEST"
 	}
 
 	return ""

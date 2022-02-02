@@ -5,7 +5,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/kaspar-p/bee/src/commands"
-	"github.com/kaspar-p/bee/src/database"
+	"github.com/kaspar-p/bee/src/persist"
 	"github.com/pkg/errors"
 )
 
@@ -15,7 +15,7 @@ type DiscordConfig struct {
 }
 
 func EstablishDiscordConnection(
-	db *database.Database,
+	database *persist.DatabaseType,
 	config *DiscordConfig,
 ) (
 	discord *discordgo.Session,
@@ -31,10 +31,10 @@ func EstablishDiscordConnection(
 
 	// Add all of the handlers to discord
 	externalHandlers := commands.GetExternalCommandHandlers()
-	discord.AddHandler(externalHandlers.BotIsReady)
-	discord.AddHandler(externalHandlers.HandleCommand)
-	discord.AddHandler(externalHandlers.BotJoinedNewGuild)
-	discord.AddHandler(externalHandlers.BotRemovedFromGuild)
+	discord.AddHandler(externalHandlers.BotIsReady(database))
+	discord.AddHandler(externalHandlers.HandleCommand(database))
+	discord.AddHandler(externalHandlers.BotJoinedNewGuild(database))
+	discord.AddHandler(externalHandlers.BotRemovedFromGuild(database))
 
 	discord.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentsGuilds | discordgo.IntentsGuildBans
 

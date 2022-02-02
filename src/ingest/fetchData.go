@@ -3,8 +3,8 @@ package ingest
 import (
 	"log"
 
-	dbLib "github.com/kaspar-p/bee/src/database"
 	"github.com/kaspar-p/bee/src/entities"
+	"github.com/kaspar-p/bee/src/persist"
 	"github.com/kaspar-p/bee/src/update"
 )
 
@@ -20,10 +20,10 @@ func GetAllSubKeysOfUsersMap(m map[string]map[string]*entities.User) []string {
 	return allKeys
 }
 
-func FillMapsWithDatabaseData(guildIds []string) {
-	guildRolePairs := FetchRoleIdData(guildIds)
-	users := FetchUserData()
-	allBusyTimes := FetchBusyTimesData()
+func FillMapsWithDatabaseData(database *persist.DatabaseType, guildIds []string) {
+	guildRolePairs := FetchRoleIdData(database, guildIds)
+	users := FetchUserData(database)
+	allBusyTimes := FetchBusyTimesData(database)
 
 	for _, user := range users {
 		user.SortBusyTimes()
@@ -35,8 +35,8 @@ func FillMapsWithDatabaseData(guildIds []string) {
 	)
 }
 
-func FetchRoleIdData(guildIds []string) []dbLib.GuildRolePair {
-	guildRolePairs := dbLib.DatabaseInstance.GetRoleIdsForGuilds(guildIds)
+func FetchRoleIdData(database *persist.DatabaseType, guildIds []string) []persist.GuildRolePair {
+	guildRolePairs := database.GetRoleIdsForGuilds(guildIds)
 
 	for _, pair := range guildRolePairs {
 		update.GuildRoleMap[pair.GuildId] = pair.RoleId
@@ -45,8 +45,8 @@ func FetchRoleIdData(guildIds []string) []dbLib.GuildRolePair {
 	return guildRolePairs
 }
 
-func FetchUserData() []*entities.User {
-	users := dbLib.DatabaseInstance.GetUsers()
+func FetchUserData(database *persist.DatabaseType) []*entities.User {
+	users := database.GetUsers()
 	for _, user := range users {
 		entities.Users[user.BelongsTo][user.Id] = user
 	}
@@ -54,8 +54,8 @@ func FetchUserData() []*entities.User {
 	return users
 }
 
-func FetchBusyTimesData() []*entities.BusyTime {
-	busyTimesArray := dbLib.DatabaseInstance.GetBusyTimes()
+func FetchBusyTimesData(database *persist.DatabaseType) []*entities.BusyTime {
+	busyTimesArray := database.GetBusyTimes()
 	for _, busyTime := range busyTimesArray {
 		user := entities.Users[busyTime.BelongsTo][busyTime.OwnerId]
 		user.BusyTimes = append(user.BusyTimes, busyTime)

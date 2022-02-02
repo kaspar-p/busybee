@@ -1,10 +1,5 @@
 package commands
 
-import (
-	"github.com/bwmarrin/discordgo"
-	"github.com/kaspar-p/bee/src/database"
-)
-
 // SLASH COMMAND CODE
 // createdCommands []*discordgo.ApplicationCommand
 // commands = []*discordgo.ApplicationCommand {
@@ -20,28 +15,30 @@ import (
 // 	"register": handleEnrolment,
 // }.
 
-type (
-	HandleCommandType            = func(*database.Database) InnerHandleCommandType
-	InnerHandleCommandType       = func(*discordgo.Session, *discordgo.MessageCreate)
-	BotIsReadyType               = func(*database.Database) InnerBotIsReadyType
-	InnerBotIsReadyType          = func(*discordgo.Session, *discordgo.Ready)
-	BotJoinedNewGuildType        = func(*database.Database) InnerBotJoinedNewGuildType
-	InnerBotJoinedNewGuildType   = func(*discordgo.Session, *discordgo.GuildCreate)
-	BotRemovedFromGuildType      = func(*database.Database) InnerBotRemovedFromGuildType
-	InnerBotRemovedFromGuildType = func(*discordgo.Session, *discordgo.GuildDelete)
-	CommandHandler               = func(s *discordgo.Session, m *discordgo.MessageCreate) error
+var (
+	DatabaseTouchingCommandHandlerType = 1
+	PureCommandHandlerType             = 2
 )
 
-type ExternalCommandHandlerMap struct {
-	HandleCommand       HandleCommandType
-	BotIsReady          BotIsReadyType
-	BotJoinedNewGuild   BotJoinedNewGuildType
-	BotRemovedFromGuild BotRemovedFromGuildType
+func (u CommandHandlerUnion) unionToPureCommandHandler() PureCommandHandler {
+	if handler, ok := u.handler.(PureCommandHandler); ok {
+		return handler
+	}
+
+	return nil
 }
 
-var commandHandlers = map[string]CommandHandler{
-	"enrol":    HandleEnrol,
-	"whobusy":  HandleWhoBusy,
-	"wyd":      HandleWyd,
-	"whenfree": HandleWhenFree,
+func (u CommandHandlerUnion) unionToDatabaseTouchingCommandHandler() DatabaseTouchingCommandHandler {
+	if handler, ok := u.handler.(DatabaseTouchingCommandHandler); ok {
+		return handler
+	}
+
+	return nil
+}
+
+var commandHandlers = map[string]CommandHandlerUnion{
+	"enrol":    {DatabaseTouchingCommandHandlerType, HandleEnrol},
+	"whobusy":  {PureCommandHandlerType, HandleWhoBusy},
+	"wyd":      {PureCommandHandlerType, HandleWyd},
+	"whenfree": {PureCommandHandlerType, HandleWhenFree},
 }

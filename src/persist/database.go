@@ -1,4 +1,4 @@
-package database
+package persist
 
 import (
 	"context"
@@ -10,11 +10,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var DatabaseInstance *Database
-
 func Connect(connectionUrl string) (*mongo.Client, context.Context) {
 	clientOptions := options.Client().ApplyURI(connectionUrl)
-	ctx := context.Background()
+	ctx := context.TODO()
 
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
@@ -24,22 +22,24 @@ func Connect(connectionUrl string) (*mongo.Client, context.Context) {
 	return client, ctx
 }
 
-func InitializeDatabase(config *DatabaseConfig) (db *Database, disconnect DisconnectFunction) {
+func InitializeDatabase(config *DatabaseConfig) (db *DatabaseType, disconnect DisconnectFunction) {
 	client, _ := Connect(config.ConnectionUrl)
 
 	disconnectFunction := func() {
-		err := client.Disconnect(context.Background())
+		err := client.Disconnect(context.TODO())
 		if err != nil {
 			log.Println("Error encountered while disconnecting: ", err)
 			panic(errors.Wrap(err, "Error encountered while disconnecting!"))
 		}
 	}
 
-	return &Database{
+	db = &DatabaseType{
 		users:     client.Database(config.DatabaseName).Collection(config.CollectionNames.Users),
 		busyTimes: client.Database(config.DatabaseName).Collection(config.CollectionNames.BusyTimes),
 		guilds:    client.Database(config.DatabaseName).Collection(config.CollectionNames.Guilds),
-	}, disconnectFunction
+	}
+
+	return db, disconnectFunction
 }
 
 func ObjectIdToString(insertedId interface{}) string {

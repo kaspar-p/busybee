@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/kaspar-p/bee/src/database"
+	"github.com/kaspar-p/bee/src/persist"
 	"github.com/kaspar-p/bee/src/utils"
 	"github.com/pkg/errors"
 )
@@ -18,7 +18,7 @@ func ReassignRoles(discord *discordgo.Session, guildId, oldRoleId, newRoleId str
 			guildId, oldRoleId, newRoleId)
 		log.Println("Error: ", err)
 
-		panic(&database.RemoveGuildRolePairError{})
+		panic(&persist.RemoveGuildRolePairError{})
 	}
 
 	for _, member := range members {
@@ -46,15 +46,15 @@ func DeleteRoleFromDiscord(discord *discordgo.Session, guildId, roleId string) {
 	err := discord.GuildRoleDelete(guildId, roleId)
 	if err != nil {
 		log.Panic("Error removing role", roleId, "from guild", guildId, "during cleanup process.")
-		panic(&database.RemoveGuildRolePairError{})
+		panic(&persist.RemoveGuildRolePairError{})
 	}
 }
 
-func DeleteGuildRolePairFromDatabase(guildId, roleId string) {
-	err := database.DatabaseInstance.RemoveGuildRolePairByGuildAndRole(guildId, roleId)
+func DeleteGuildRolePairFromDatabase(database *persist.DatabaseType, guildId, roleId string) {
+	err := database.RemoveGuildRolePairByGuildAndRole(guildId, roleId)
 	if err != nil {
 		log.Panic("Error deleting guild role pair from database: ", err)
-		panic(&database.RemoveGuildRolePairError{})
+		panic(&persist.RemoveGuildRolePairError{})
 	}
 }
 
@@ -75,12 +75,12 @@ func CreateRoleInDiscord(discord *discordgo.Session, guildId string) string {
 	return newRole.ID
 }
 
-func CreateRole(discord *discordgo.Session, guildId string) string {
+func CreateRole(database *persist.DatabaseType, discord *discordgo.Session, guildId string) string {
 	// Add the role to discord
 	newRoleId := CreateRoleInDiscord(discord, guildId)
 
 	// Add the role to the database
-	database.DatabaseInstance.AddGuildRolePair(guildId, newRoleId)
+	database.AddGuildRolePair(guildId, newRoleId)
 
 	// Set global busy role ID to be the new ID
 	ChangeGuildRoleMapEntry(guildId, newRoleId)

@@ -5,9 +5,9 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/kaspar-p/bee/src/database"
 	discordLib "github.com/kaspar-p/bee/src/discord"
 	"github.com/kaspar-p/bee/src/environment"
+	"github.com/kaspar-p/bee/src/persist"
 	"github.com/kaspar-p/bee/src/update"
 	"github.com/robfig/cron"
 )
@@ -21,18 +21,18 @@ func main() {
 	update.InitializeGuildRoleMap()
 
 	// Connect to the database
-	db, closeDatabase := database.InitializeDatabase(config.DatabaseConfig)
+	database, closeDatabase := persist.InitializeDatabase(config.DatabaseConfig)
 	defer closeDatabase()
 
 	// Initialize the bot
-	discord, closeDiscord := discordLib.EstablishDiscordConnection(db, config.DiscordConfig)
+	discord, closeDiscord := discordLib.EstablishDiscordConnection(database, config.DiscordConfig)
 	defer closeDiscord()
 
 	// Create and start the CRON job
 	cronScheduler := cron.New()
 
 	err := cronScheduler.AddFunc("1 * * * * *", func() {
-		update.UpdateAllGuilds(discord)
+		update.UpdateAllGuilds(database, discord)
 	})
 	if err != nil {
 		log.Println("Error adding CRON job! Error: ", err)

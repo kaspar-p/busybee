@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/kaspar-p/bee/src/database"
 	"github.com/kaspar-p/bee/src/entities"
 	"github.com/kaspar-p/bee/src/ingest"
+	"github.com/kaspar-p/bee/src/persist"
 	"github.com/kaspar-p/bee/src/update"
 	"github.com/pkg/errors"
 )
@@ -29,7 +29,7 @@ func GetExternalCommandHandlers() ExternalCommandHandlerMap {
 	}
 }
 
-func HandleCommand(db *database.Database) InnerHandleCommandType {
+func HandleCommand(database *persist.DatabaseType) InnerHandleCommandType {
 	return func(discord *discordgo.Session, message *discordgo.MessageCreate) {
 		// Setup common error handler for panic() calls within the message handlers
 		defer func() {
@@ -43,8 +43,12 @@ func HandleCommand(db *database.Database) InnerHandleCommandType {
 
 			// Check if the command matches
 			if !strings.HasPrefix(message.Content, command) {
+				log.Println("message:", message.Content, "does not match command:", command)
+
 				continue
 			}
+
+			log.Println("Matched command: ")
 
 			// Check if the command only matches - and then garbage. e.g. .whobusybusy
 			if strings.Split(message.Content, " ")[0] != command {
@@ -62,8 +66,16 @@ func HandleCommand(db *database.Database) InnerHandleCommandType {
 
 			log.Println("Executing handler for message: ", key)
 
-			// Execute the handler that matches the command
-			err := handler(discord, message)
+			// Execute the handler that matches the command - parse the union type
+			var err error
+
+			switch handler.handlerType {
+			case DatabaseTouchingCommandHandlerType:
+				err = handler.unionToDatabaseTouchingCommandHandler()(database, discord, message)
+			case PureCommandHandlerType:
+				err = handler.unionToPureCommandHandler()(discord, message)
+			}
+
 			if err != nil {
 				log.Printf("Error encountered while executing command %s. Error: %v.\n", command, err)
 
@@ -74,13 +86,11 @@ func HandleCommand(db *database.Database) InnerHandleCommandType {
 					return
 				}
 			}
-
-			return
 		}
 	}
 }
 
-func BotIsReady(db *database.Database) InnerBotIsReadyType {
+func BotIsReady(database *persist.DatabaseType) InnerBotIsReadyType {
 	return func(discord *discordgo.Session, isReady *discordgo.Ready) {
 		log.Println("Bot successfully connected! Press CMD + C at any time to exit.")
 		log.Println("Bot is a part of", len(isReady.Guilds), "guilds!")
@@ -94,17 +104,17 @@ func BotIsReady(db *database.Database) InnerBotIsReadyType {
 		entities.InitializeUsers(guildIds)
 
 		// Connect to the database
-		ingest.FillMapsWithDatabaseData(guildIds)
+		ingest.FillMapsWithDatabaseData(database, guildIds)
 
 		// SLASH COMMAND CODE
 		// clearAndRegisterCommands(discord)
 
 		// Once everything is ready
-		update.UpdateAllGuilds(discord)
+		update.UpdateAllGuilds(database, discord)
 	}
 }
 
-func BotJoinedNewGuild(db *database.Database) InnerBotJoinedNewGuildType {
+func BotJoinedNewGuild(database *persist.DatabaseType) InnerBotJoinedNewGuildType {
 	return func(discord *discordgo.Session, event *discordgo.GuildCreate) {
 		if event.Unavailable {
 			return
@@ -122,7 +132,7 @@ func BotJoinedNewGuild(db *database.Database) InnerBotJoinedNewGuildType {
 	}
 }
 
-func BotRemovedFromGuild(db *database.Database) InnerBotRemovedFromGuildType {
+func BotRemovedFromGuild(database *persist.DatabaseType) InnerBotRemovedFromGuildType {
 	return func(discord *discordgo.Session, event *discordgo.GuildDelete) {
 		guildId := event.Guild.ID
 		if event.Unavailable {
@@ -152,7 +162,7 @@ func BotRemovedFromGuild(db *database.Database) InnerBotRemovedFromGuildType {
 		}
 
 		// Remove all data in guild from db
-		err = database.DatabaseInstance.RemoveAllDataInGuild(guildId)
+		err = database.RemoveAllDataInGuild(guildId)
 		if err != nil {
 			log.Println("Error removing all data of a guild!")
 

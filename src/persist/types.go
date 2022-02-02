@@ -1,4 +1,4 @@
-package database
+package persist
 
 import (
 	"context"
@@ -11,7 +11,7 @@ type (
 	DisconnectFunction = func()
 )
 
-type Database struct {
+type DatabaseType struct {
 	users     *mongo.Collection
 	busyTimes *mongo.Collection
 	guilds    *mongo.Collection
@@ -20,7 +20,7 @@ type Database struct {
 type DatabaseConfig struct {
 	ConnectionUrl   string
 	DatabaseName    string
-	CollectionNames CollectionNames
+	CollectionNames *CollectionNames
 }
 
 // The names of the collections used in the backend.

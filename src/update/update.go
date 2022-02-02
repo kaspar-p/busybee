@@ -7,6 +7,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/kaspar-p/bee/src/entities"
+	"github.com/kaspar-p/bee/src/persist"
 	"github.com/kaspar-p/bee/src/utils"
 )
 
@@ -76,7 +77,7 @@ func UpdateSingleGuild(discord *discordgo.Session, guildId string) {
 	}
 }
 
-func ValidateAllGuilds(discord *discordgo.Session) {
+func ValidateAllGuilds(database *persist.DatabaseType, discord *discordgo.Session) {
 	log.Println("--------------------------- VALIDATING ALL GUILDS ----------------------------")
 
 	var waitGroup sync.WaitGroup
@@ -90,7 +91,7 @@ func ValidateAllGuilds(discord *discordgo.Session) {
 
 			// Run the process
 			log.Printf("Validating data for guild %s and users: %d\n", guildId, len(entities.Users[guildId]))
-			RunRoleValidityCheck(discord, guildId)
+			RunRoleValidityCheck(database, discord, guildId)
 		}(discord, guildId)
 	}
 	// Wait for all validity checks to run
@@ -98,12 +99,12 @@ func ValidateAllGuilds(discord *discordgo.Session) {
 	log.Println("------------------------------------------------------------------------------")
 }
 
-func UpdateAllGuilds(discord *discordgo.Session) {
+func UpdateAllGuilds(database *persist.DatabaseType, discord *discordgo.Session) {
 	// Boolean on whether or not to validate data.
 	// Keep false until there is a mechanism for detecting disconnects from discord
 	performValidation := false
 	if performValidation {
-		ValidateAllGuilds(discord)
+		ValidateAllGuilds(database, discord)
 	}
 
 	log.Println("---------------------------- UPDATING ALL GUILDS -----------------------------")

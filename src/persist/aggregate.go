@@ -1,9 +1,9 @@
-package database
+package persist
 
 // General methods that define functions that are independent on table or data structure
 // Usually relate to an entire guild, or all data
 
-func (database *Database) RemoveAllDataInGuild(guildId string) error {
+func (database *DatabaseType) RemoveAllDataInGuild(guildId string) error {
 	err := database.RemoveAllUsersInGuild(guildId)
 	if err != nil {
 		return err

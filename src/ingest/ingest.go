@@ -5,18 +5,18 @@ import (
 
 	"github.com/apognu/gocal"
 	"github.com/bwmarrin/discordgo"
-	dbLib "github.com/kaspar-p/bee/src/database"
 	"github.com/kaspar-p/bee/src/entities"
+	"github.com/kaspar-p/bee/src/persist"
 )
 
-func IngestNewData(message *discordgo.MessageCreate, events []gocal.Event) {
+func IngestNewData(database *persist.DatabaseType, message *discordgo.MessageCreate, events []gocal.Event) {
 	// Create a user if they do not already exist - overwrites BusyTimes
-	user := GetOrCreateUser(message.Author.ID, message.Author.Username, message.GuildID)
+	user := GetOrCreateUser(database, message.Author.ID, message.Author.Username, message.GuildID)
 
-	OverwriteUserEvents(user, events)
+	OverwriteUserEvents(database, user, events)
 }
 
-func GetOrCreateUser(userId, userName, guildId string) *entities.User {
+func GetOrCreateUser(database *persist.DatabaseType, userId, userName, guildId string) *entities.User {
 	if user, ok := entities.Users[guildId][userId]; ok {
 		log.Println("User found with ID: ", userId)
 
@@ -30,13 +30,13 @@ func GetOrCreateUser(userId, userName, guildId string) *entities.User {
 		entities.Users[user.BelongsTo][user.Id] = user
 
 		// Add the new user to the database
-		dbLib.DatabaseInstance.AddUser(user)
+		database.AddUser(user)
 
 		return user
 	}
 }
 
-func OverwriteUserEvents(user *entities.User, events []gocal.Event) {
+func OverwriteUserEvents(database *persist.DatabaseType, user *entities.User, events []gocal.Event) {
 	// Overwrite the busyTimes in memory
 	user.BusyTimes = make([]*entities.BusyTime, 0)
 
@@ -51,5 +51,5 @@ func OverwriteUserEvents(user *entities.User, events []gocal.Event) {
 	user.SortBusyTimes()
 
 	// Overwrite the busyTimes in the database
-	dbLib.DatabaseInstance.OverwriteUserBusyTimes(user, user.BusyTimes)
+	database.OverwriteUserBusyTimes(user, user.BusyTimes)
 }

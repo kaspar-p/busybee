@@ -36,8 +36,8 @@ func InitializeViper() {
 	BotReady = false
 
 	// Get environment variables
-	BotToken = viper.GetString("BOT.TOKEN")
-	AppId = viper.GetString("BOT.APP_ID")
+	BotToken = viper.GetString("BUSYBEE_BOT.TOKEN")
+	AppId = viper.GetString("BUSYBEE_BOT.APP_ID")
 
 	// Database constants
 	ConnectionURL = viper.GetString("MONGO_DB.CONNECTION_URL")

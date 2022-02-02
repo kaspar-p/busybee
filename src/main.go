@@ -14,7 +14,7 @@ import (
 
 func main() {
 	// Initialize constants
-	log.Println("Initialzing constants and globals.")
+	log.Println("Initializing constants and globals.")
 
 	config := environment.InitializeViper(environment.PRODUCTION)
 

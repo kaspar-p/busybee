@@ -1,9 +1,9 @@
 package test
 
 import (
-	discordLib "github.com/kaspar-p/bee/src/discord"
-	"github.com/kaspar-p/bee/src/environment"
-	"github.com/kaspar-p/bee/src/persist"
+	discordLib "github.com/kaspar-p/busybee/src/discord"
+	"github.com/kaspar-p/busybee/src/environment"
+	"github.com/kaspar-p/busybee/src/persist"
 )
 
 type (

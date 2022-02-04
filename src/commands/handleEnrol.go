@@ -13,9 +13,9 @@ import (
 
 	"github.com/apognu/gocal"
 	"github.com/bwmarrin/discordgo"
-	"github.com/kaspar-p/bee/src/ingest"
-	"github.com/kaspar-p/bee/src/persist"
-	"github.com/kaspar-p/bee/src/update"
+	"github.com/kaspar-p/busybee/src/ingest"
+	"github.com/kaspar-p/busybee/src/persist"
+	"github.com/kaspar-p/busybee/src/update"
 	"github.com/pkg/errors"
 )
 

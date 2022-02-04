@@ -5,8 +5,8 @@ import (
 
 	"github.com/apognu/gocal"
 	"github.com/bwmarrin/discordgo"
-	"github.com/kaspar-p/bee/src/entities"
-	"github.com/kaspar-p/bee/src/persist"
+	"github.com/kaspar-p/busybee/src/entities"
+	"github.com/kaspar-p/busybee/src/persist"
 )
 
 func IngestNewData(database *persist.DatabaseType, message *discordgo.MessageCreate, events []gocal.Event) {

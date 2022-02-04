@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/kaspar-p/bee/src/discord"
-	"github.com/kaspar-p/bee/src/persist"
+	"github.com/kaspar-p/busybee/src/discord"
+	"github.com/kaspar-p/busybee/src/persist"
 	"github.com/spf13/viper"
 )
 

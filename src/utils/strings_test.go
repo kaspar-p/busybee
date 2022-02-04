@@ -3,8 +3,8 @@ package utils_test
 import (
 	"testing"
 
-	"github.com/kaspar-p/bee/src/test"
-	. "github.com/kaspar-p/bee/src/utils"
+	"github.com/kaspar-p/busybee/src/test"
+	. "github.com/kaspar-p/busybee/src/utils"
 )
 
 func TestWrapStringInCodeBlock(t *testing.T) {

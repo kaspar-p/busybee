@@ -3,9 +3,9 @@ package ingest
 import (
 	"log"
 
-	"github.com/kaspar-p/bee/src/entities"
-	"github.com/kaspar-p/bee/src/persist"
-	"github.com/kaspar-p/bee/src/update"
+	"github.com/kaspar-p/busybee/src/entities"
+	"github.com/kaspar-p/busybee/src/persist"
+	"github.com/kaspar-p/busybee/src/update"
 )
 
 func GetAllSubKeysOfUsersMap(m map[string]map[string]*entities.User) []string {

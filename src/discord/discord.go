@@ -4,8 +4,8 @@ import (
 	"log"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/kaspar-p/bee/src/commands"
-	"github.com/kaspar-p/bee/src/persist"
+	"github.com/kaspar-p/busybee/src/commands"
+	"github.com/kaspar-p/busybee/src/persist"
 	"github.com/pkg/errors"
 )
 

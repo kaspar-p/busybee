@@ -5,10 +5,10 @@ import (
 	"os"
 	"os/signal"
 
-	discordLib "github.com/kaspar-p/bee/src/discord"
-	"github.com/kaspar-p/bee/src/environment"
-	"github.com/kaspar-p/bee/src/persist"
-	"github.com/kaspar-p/bee/src/update"
+	discordLib "github.com/kaspar-p/busybee/src/discord"
+	"github.com/kaspar-p/busybee/src/environment"
+	"github.com/kaspar-p/busybee/src/persist"
+	"github.com/kaspar-p/busybee/src/update"
 	"github.com/robfig/cron"
 )
 

@@ -3,8 +3,8 @@ package ingest_test
 import (
 	"testing"
 
-	. "github.com/kaspar-p/bee/src/ingest"
-	"github.com/kaspar-p/bee/src/test"
+	. "github.com/kaspar-p/busybee/src/ingest"
+	"github.com/kaspar-p/busybee/src/test"
 )
 
 func TestParseEventTitle(t *testing.T) {

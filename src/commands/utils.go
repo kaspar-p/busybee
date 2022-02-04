@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/kaspar-p/bee/src/constants"
+	"github.com/kaspar-p/busybee/src/constants"
 	"github.com/pkg/errors"
 )
 

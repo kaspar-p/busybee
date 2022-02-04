@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/kaspar-p/bee/src/entities"
+	"github.com/kaspar-p/busybee/src/entities"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 )

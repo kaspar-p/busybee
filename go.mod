@@ -1,4 +1,4 @@
-module github.com/kaspar-p/bee
+module github.com/kaspar-p/busybee
 
 go 1.17
 

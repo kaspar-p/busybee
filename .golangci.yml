@@ -35,14 +35,14 @@ linters-settings:
 
 linters:
   enable-all: true
-  disable:
-    - interfacer
-    - scopelint
-    - golint
-    - maligned
-    - exhaustivestruct
-    - ifshort
-    - gochecknoglobals
-    - revive
+  # disable:
+  # - interfacer
+  # - scopelint
+  # - golint
+  # - maligned
+  # - exhaustivestruct
+  # - ifshort
+  # - gochecknoglobals
+  # - revive
 run:
   issues-exit-code: 1

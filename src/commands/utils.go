@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/kaspar-p/bee/src/constants"
+	"github.com/kaspar-p/busybee/src/constants"
 	"github.com/pkg/errors"
 )
 
@@ -18,6 +18,27 @@ func CreateTableEmbed(title, description string) *discordgo.MessageEmbed {
 	}
 
 	return &embed
+}
+
+func TalkToBusyBee(discord *discordgo.Session, message *discordgo.MessageCreate, command string) error {
+	log.Println("Someone's talking to busybee through command:", command)
+
+	var response string
+
+	switch command {
+	case ".wyd":
+		response = "nothing much, wbu \\;)"
+	case ".whenfree":
+		response = "i'm always free for you \\;)"
+	}
+
+	err := SendSingleMessage(
+		discord,
+		message.ChannelID,
+		response,
+	)
+
+	return err
 }
 
 func SendSingleMessage(discord *discordgo.Session, channelID, contents string) error {

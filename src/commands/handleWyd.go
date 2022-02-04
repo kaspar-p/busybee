@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/kaspar-p/bee/src/entities"
+	"github.com/kaspar-p/busybee/src/entities"
 	"github.com/pkg/errors"
 )
 

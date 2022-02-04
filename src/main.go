@@ -5,10 +5,10 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/bwmarrin/discordgo"
-	"github.com/kaspar-p/bee/src/commands"
-	"github.com/kaspar-p/bee/src/constants"
-	"github.com/kaspar-p/bee/src/update"
+	discordLib "github.com/kaspar-p/busybee/src/discord"
+	"github.com/kaspar-p/busybee/src/environment"
+	"github.com/kaspar-p/busybee/src/persist"
+	"github.com/kaspar-p/busybee/src/update"
 	"github.com/robfig/cron"
 )
 
@@ -16,35 +16,23 @@ func main() {
 	// Initialize constants
 	log.Println("Initializing constants and globals.")
 
-	constants.InitializeViper()
+	config := environment.InitializeViper(environment.PRODUCTION)
+
 	update.InitializeGuildRoleMap()
 
+	// Connect to the database
+	database, closeDatabase := persist.InitializeDatabase(config.DatabaseConfig)
+	defer closeDatabase()
+
 	// Initialize the bot
-	discord, err := discordgo.New("Bot " + constants.BotToken)
-	if err != nil {
-		log.Println("Error creating discord session: ", err)
-		panic(err)
-	}
-
-	// Add handlers
-	discord.AddHandler(commands.BotIsReady)
-	discord.AddHandler(commands.HandleCommand)
-	discord.AddHandler(commands.BotJoinedNewGuild)
-	discord.AddHandler(commands.BotRemovedFromGuild)
-	discord.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentsGuilds | discordgo.IntentsGuildBans
-
-	// Open the bot
-	err = discord.Open()
-	if err != nil {
-		log.Println("Error connecting to discord:", err)
-		panic(err)
-	}
+	discord, closeDiscord := discordLib.EstablishDiscordConnection(database, config.DiscordConfig)
+	defer closeDiscord()
 
 	// Create and start the CRON job
 	cronScheduler := cron.New()
 
-	err = cronScheduler.AddFunc("1 * * * * *", func() {
-		update.UpdateAllGuilds(discord)
+	err := cronScheduler.AddFunc("1 * * * * *", func() {
+		update.UpdateAllGuilds(database, discord)
 	})
 	if err != nil {
 		log.Println("Error adding CRON job! Error: ", err)
@@ -52,8 +40,6 @@ func main() {
 	}
 
 	cronScheduler.Start()
-
-	defer discord.Close()
 
 	// SLASH COMMAND CODE
 	// // Remove the commands when the bot is closed

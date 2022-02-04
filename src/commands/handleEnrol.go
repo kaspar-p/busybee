@@ -13,12 +13,13 @@ import (
 
 	"github.com/apognu/gocal"
 	"github.com/bwmarrin/discordgo"
-	"github.com/kaspar-p/bee/src/ingest"
-	"github.com/kaspar-p/bee/src/update"
+	"github.com/kaspar-p/busybee/src/ingest"
+	"github.com/kaspar-p/busybee/src/persist"
+	"github.com/kaspar-p/busybee/src/update"
 	"github.com/pkg/errors"
 )
 
-func HandleEnrol(discord *discordgo.Session, message *discordgo.MessageCreate) error {
+func HandleEnrol(database *persist.DatabaseType, discord *discordgo.Session, message *discordgo.MessageCreate) error {
 	if len(message.Attachments) != 1 {
 		err := SendSingleMessage(discord, message.ChannelID, "Requires exactly 1 `.ics` file to be attached!")
 
@@ -57,7 +58,7 @@ func HandleEnrol(discord *discordgo.Session, message *discordgo.MessageCreate) e
 	log.Printf("Going to ingest %d events!\n", len(events))
 
 	// Create new users and their events
-	ingest.IngestNewData(message, events)
+	ingest.IngestNewData(database, message, events)
 
 	// Finally, update the roles when a new user is added
 	update.UpdateSingleGuild(discord, message.GuildID)
@@ -175,7 +176,7 @@ func removeFile(filepath string) {
 }
 
 func downloadFile(url string) (string, error) {
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, http.NoBody)
+	req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, url, http.NoBody)
 	if err != nil {
 		log.Println("Error setting up request:", err)
 

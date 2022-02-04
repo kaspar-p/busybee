@@ -1,11 +1,11 @@
-package database
+package persist
 
 import (
 	"context"
 	"log"
 	"time"
 
-	"github.com/kaspar-p/bee/src/entities"
+	"github.com/kaspar-p/busybee/src/entities"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -62,7 +62,7 @@ func CreateBusyTimeFromResult(result bson.M) entities.BusyTime {
 	return newBusyTime
 }
 
-func (database *Database) OverwriteUserBusyTimes(user *entities.User, busyTimes []*entities.BusyTime) {
+func (database *DatabaseType) OverwriteUserBusyTimes(user *entities.User, busyTimes []*entities.BusyTime) {
 	log.Printf("Overwriting user %s busy times with %d busy times.\n", user.Name, len(busyTimes))
 
 	// Delete all of the busy times associated with that user
@@ -71,7 +71,7 @@ func (database *Database) OverwriteUserBusyTimes(user *entities.User, busyTimes 
 		{Key: "BelongsTo", Value: user.BelongsTo},
 	}
 
-	deleteResult, err := database.busyTimes.DeleteMany(context.Background(), filter)
+	deleteResult, err := database.busyTimes.DeleteMany(context.TODO(), filter)
 	if err != nil {
 		log.Panic("Error while deleting busy times tied to user", user.Name)
 
@@ -84,41 +84,41 @@ func (database *Database) OverwriteUserBusyTimes(user *entities.User, busyTimes 
 	database.AddBusyTimes(busyTimes)
 }
 
-func (database *Database) AddBusyTimes(busyTimes []*entities.BusyTime) {
+func (database *DatabaseType) AddBusyTimes(busyTimes []*entities.BusyTime) {
 	if database == nil {
 		panic(&DatabaseUninitializedError{})
 	}
 
 	busyTimesDocuments := CreateBusyTimesDocuments(busyTimes)
 
-	_, err := database.busyTimes.InsertMany(context.Background(), busyTimesDocuments)
+	_, err := database.busyTimes.InsertMany(context.TODO(), busyTimesDocuments)
 	if err != nil {
 		log.Println("Error inserting busy times: ", busyTimesDocuments, ". Error: ", err)
 		panic(&AddBusyTimeError{Err: err})
 	}
 }
 
-func (database *Database) RemoveAllBusyTimesInGuild(guildId string) error {
+func (database *DatabaseType) RemoveAllBusyTimesInGuild(guildId string) error {
 	if database == nil {
 		return &DatabaseUninitializedError{}
 	}
 
 	filter := bson.D{{Key: "BelongsTo", Value: guildId}}
-	deleteResult, err := database.busyTimes.DeleteMany(context.Background(), filter)
+	deleteResult, err := database.busyTimes.DeleteMany(context.TODO(), filter)
 	log.Printf("Deleted %d users that belonged to guild %s.\n", deleteResult.DeletedCount, guildId)
 
 	return errors.Wrap(err, "Error deleting all busy times from a guild")
 }
 
-func (database *Database) GetBusyTimes() []*entities.BusyTime {
-	cursor, err := database.busyTimes.Find(context.Background(), bson.D{{}})
+func (database *DatabaseType) GetBusyTimes() []*entities.BusyTime {
+	cursor, err := database.busyTimes.Find(context.TODO(), bson.D{{}})
 	if err != nil {
 		log.Println("Error getting cursor when finding all busyTimes objects. Error: ", err)
 		panic(&GetBusyTimeError{Err: err})
 	}
 
 	var results []bson.M
-	if err = cursor.All(context.Background(), &results); err != nil {
+	if err = cursor.All(context.TODO(), &results); err != nil {
 		log.Println("Error getting results from cursor when getting all busyTimes objects. Error: ", err)
 		panic(&GetBusyTimeError{Err: err})
 	}

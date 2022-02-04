@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/kaspar-p/bee/src/entities"
-	"github.com/kaspar-p/bee/src/utils"
+	"github.com/kaspar-p/busybee/src/entities"
+	"github.com/kaspar-p/busybee/src/utils"
 )
 
 type TimePair struct {
@@ -150,26 +150,22 @@ func HandleWhenFree(discord *discordgo.Session, message *discordgo.MessageCreate
 		return err
 	}
 
-	// Convert mentions into 'User's
-	mentionedUsers := make([]*entities.User, 0)
-
-	for _, mentionedUser := range message.Mentions {
-		if user, ok := entities.Users[message.GuildID][mentionedUser.ID]; ok {
-			log.Println("Got mentioned user", user.Name)
-			mentionedUsers = append(mentionedUsers, user)
-		} else {
-			err := SendSingleMessage(
-				discord,
-				message.ChannelID,
-				"the @ mentioned user `"+mentionedUser.Username+"` isn't in the system. ask them to enrol pls \\:)",
-			)
-
-			return err
-		}
+	// Convert mentions into list of User struct
+	mentionedUsers, err := ParseMentionedUsers(discord, message)
+	if err != nil {
+		return err
 	}
 
 	maxHours := 6
+	timePairs := GetCommonHours(mentionedUsers, maxHours)
 
+	embed := GenerateWhenFreeEmbed(timePairs)
+	err = SendSingleEmbed(discord, message.ChannelID, embed)
+
+	return err
+}
+
+func GetCommonHours(mentionedUsers []*entities.User, maxHours int) []TimePair {
 	timePairs := make([]TimePair, maxHours)
 
 	for hour := 1; hour < maxHours+1; hour++ {
@@ -188,10 +184,36 @@ func HandleWhenFree(discord *discordgo.Session, message *discordgo.MessageCreate
 		}
 	}
 
-	embed := GenerateWhenFreeEmbed(timePairs)
-	err := SendSingleEmbed(discord, message.ChannelID, embed)
+	return timePairs
+}
 
-	return err
+func ParseMentionedUsers(discord *discordgo.Session, message *discordgo.MessageCreate) ([]*entities.User, error) {
+	mentionedUsers := make([]*entities.User, 0)
+
+	for _, mentionedUser := range message.Mentions {
+		user, userExists := entities.Users[message.GuildID][mentionedUser.ID]
+
+		// If the user was busybee
+		if mentionedUser.ID == discord.State.User.ID {
+			return nil, TalkToBusyBee(discord, message, ".whenfree")
+		}
+
+		// If the user is not in the system
+		if userExists {
+			log.Println("Got mentioned user", user.Name)
+			mentionedUsers = append(mentionedUsers, user)
+		} else {
+			err := SendSingleMessage(
+				discord,
+				message.ChannelID,
+				"the @ mentioned user `"+mentionedUser.Username+"` isn't in the system. ask them to enrol pls \\:)",
+			)
+
+			return nil, err
+		}
+	}
+
+	return mentionedUsers, nil
 }
 
 func GenerateWhenFreeEmbed(timePairs []TimePair) *discordgo.MessageEmbed {

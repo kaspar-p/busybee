@@ -1,21 +1,21 @@
-package database
+package persist
 
 import (
 	"context"
 	"log"
 
-	"github.com/kaspar-p/bee/src/entities"
+	"github.com/kaspar-p/busybee/src/entities"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (database *Database) RemoveAllUsersInGuild(guildId string) error {
+func (database *DatabaseType) RemoveAllUsersInGuild(guildId string) error {
 	if database == nil {
 		return &DatabaseUninitializedError{}
 	}
 
 	filter := bson.D{{Key: "BelongsTo", Value: guildId}}
-	deleteResult, err := database.users.DeleteMany(context.Background(), filter)
+	deleteResult, err := database.users.DeleteMany(context.TODO(), filter)
 	log.Println("Deleted", deleteResult.DeletedCount, "users that belonged to guild", guildId)
 
 	return errors.Wrap(err, "Error removing all users from guild!")
@@ -45,14 +45,14 @@ func ConvertDocumentToUser(result bson.M) *entities.User {
 	return user
 }
 
-func (database *Database) AddUser(newUser *entities.User) string {
+func (database *DatabaseType) AddUser(newUser *entities.User) string {
 	if database == nil {
 		panic(&DatabaseUninitializedError{})
 	}
 
 	userDocument := newUser.ConvertUserToDocument()
 
-	result, err := database.users.InsertOne(context.Background(), userDocument)
+	result, err := database.users.InsertOne(context.TODO(), userDocument)
 	if err != nil {
 		log.Panic("Error inserting user: ", newUser, ". Error: ", err)
 		panic(&AddUserError{Err: err})
@@ -63,15 +63,15 @@ func (database *Database) AddUser(newUser *entities.User) string {
 	return id
 }
 
-func (database *Database) GetUsers() []*entities.User {
-	cursor, err := database.users.Find(context.Background(), bson.D{{}})
+func (database *DatabaseType) GetUsers() []*entities.User {
+	cursor, err := database.users.Find(context.TODO(), bson.D{{}})
 	if err != nil {
 		log.Panic("Error getting cursor when finding all users. Error: ", err)
 		panic(&GetUserError{Err: err})
 	}
 
 	var results []bson.M
-	if err = cursor.All(context.Background(), &results); err != nil {
+	if err = cursor.All(context.TODO(), &results); err != nil {
 		log.Panic("Error getting results from cursor when getting all users. Error: ", err)
 		panic(&GetUserError{Err: err})
 	}

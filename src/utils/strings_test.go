@@ -3,8 +3,8 @@ package utils_test
 import (
 	"testing"
 
-	"github.com/kaspar-p/bee/src/test"
-	. "github.com/kaspar-p/bee/src/utils"
+	"github.com/kaspar-p/busybee/src/test"
+	. "github.com/kaspar-p/busybee/src/utils"
 )
 
 func TestWrapStringInCodeBlock(t *testing.T) {
@@ -18,17 +18,17 @@ func TestWrapStringInCodeBlock(t *testing.T) {
 func TestRemoveStringFromSlice(t *testing.T) {
 	t.Parallel()
 
-	type Input struct {
+	type TestCase struct {
 		Slice []string
 		Elem  string
 		Exp   []string
 	}
 
-	tests := []Input{
-		{Slice: []string{"a", "b", "c"}, Elem: "a", Exp: []string{"b", "c"}},
-		{Slice: []string{"a", "b", "c"}, Elem: "d", Exp: []string{"a", "b", "c"}},
-		{Slice: []string{"a"}, Elem: "a", Exp: []string{}},
-		{Slice: []string{"a", "b", "a", "a"}, Elem: "a", Exp: []string{"b", "a", "a"}},
+	tests := []TestCase{
+		{[]string{"a", "b", "c"}, "a", []string{"b", "c"}},
+		{[]string{"a", "b", "c"}, "d", []string{"a", "b", "c"}},
+		{[]string{"a"}, "a", []string{}},
+		{[]string{"a", "b", "a", "a"}, "a", []string{"b", "a", "a"}},
 	}
 
 	for _, oneTest := range tests {
@@ -40,18 +40,18 @@ func TestRemoveStringFromSlice(t *testing.T) {
 func TestStringInSlice(t *testing.T) {
 	t.Parallel()
 
-	type Input struct {
+	type TestCase struct {
 		Slice    []string
 		Elem     string
 		ExpValue bool
 		ExpIndex int
 	}
 
-	tests := []Input{
-		{Slice: []string{"a", "b", "c"}, Elem: "a", ExpValue: true, ExpIndex: 0},
-		{Slice: []string{"a", "b", "c"}, Elem: "d", ExpValue: false, ExpIndex: 0},
-		{Slice: []string{"a"}, Elem: "a", ExpValue: true, ExpIndex: 0},
-		{Slice: []string{"c", "b", "a", "a"}, Elem: "a", ExpValue: true, ExpIndex: 2},
+	tests := []TestCase{
+		{[]string{"a", "b", "c"}, "a", true, 0},
+		{[]string{"a", "b", "c"}, "d", false, 0},
+		{[]string{"a"}, "a", true, 0},
+		{[]string{"c", "b", "a", "a"}, "a", true, 2},
 	}
 
 	for _, oneTest := range tests {

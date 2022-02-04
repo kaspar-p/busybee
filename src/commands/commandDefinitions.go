@@ -1,7 +1,5 @@
 package commands
 
-import "github.com/bwmarrin/discordgo"
-
 // SLASH COMMAND CODE
 // createdCommands []*discordgo.ApplicationCommand
 // commands = []*discordgo.ApplicationCommand {
@@ -17,9 +15,30 @@ import "github.com/bwmarrin/discordgo"
 // 	"register": handleEnrolment,
 // }.
 
-var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.MessageCreate) error{
-	"enrol":    HandleEnrol,
-	"whobusy":  HandleWhoBusy,
-	"wyd":      HandleWyd,
-	"whenfree": HandleWhenFree,
+var (
+	DatabaseTouchingCommandHandlerType = 1
+	PureCommandHandlerType             = 2
+)
+
+func (u CommandHandlerUnion) unionToPureCommandHandler() PureCommandHandler {
+	if handler, ok := u.handler.(PureCommandHandler); ok {
+		return handler
+	}
+
+	return nil
+}
+
+func (u CommandHandlerUnion) unionToDatabaseTouchingCommandHandler() DatabaseTouchingCommandHandler {
+	if handler, ok := u.handler.(DatabaseTouchingCommandHandler); ok {
+		return handler
+	}
+
+	return nil
+}
+
+var commandHandlers = map[string]CommandHandlerUnion{
+	"enrol":    {DatabaseTouchingCommandHandlerType, HandleEnrol},
+	"whobusy":  {PureCommandHandlerType, HandleWhoBusy},
+	"wyd":      {PureCommandHandlerType, HandleWyd},
+	"whenfree": {PureCommandHandlerType, HandleWhenFree},
 }

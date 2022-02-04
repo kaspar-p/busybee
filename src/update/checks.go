@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/kaspar-p/bee/src/utils"
+	"github.com/kaspar-p/busybee/src/utils"
 )
 
 func IsRoleIdInGuild(discord *discordgo.Session, guildId, roleId string) bool {

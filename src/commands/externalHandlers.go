@@ -43,8 +43,6 @@ func HandleCommand(database *persist.DatabaseType) InnerHandleCommandType {
 
 			// Check if the command matches
 			if !strings.HasPrefix(message.Content, command) {
-				log.Println("message:", message.Content, "does not match command:", command)
-
 				continue
 			}
 

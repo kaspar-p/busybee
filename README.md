@@ -1,5 +1,7 @@
 # busybee
 
+![Build Workflow](https://github.com/kaspar-p/busybee/actions/workflows/build.yml/badge.svg)
+
 A discord bot for determining who can get ramen with me. Ingests `.ics` files and is cute.
 
 ## Usage

@@ -18,6 +18,8 @@ func main() {
 
 	config := environment.InitializeViper(environment.PRODUCTION)
 
+	log.Println(config.DatabaseConfig)
+
 	update.InitializeGuildRoleMap()
 
 	// Connect to the database

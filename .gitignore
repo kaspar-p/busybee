@@ -2,9 +2,13 @@
 env.yaml
 env.test.yaml
 env.prod.yaml
+env.dev.yaml
 
 # Ignore tmp/ directory for downloading .ics files
 tmp/
+
+# Ignore binary build
+bin/
 
 # Ignore developer-specific settings
 .vscode

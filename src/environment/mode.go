@@ -21,14 +21,14 @@ func (m Mode) String() string {
 	return ""
 }
 
-func (m Mode) ConfigString() string {
+func (m Mode) ConfigFile() string {
 	switch m {
 	case PRODUCTION:
-		return "PROD"
+		return "env.prod"
 	case DEVELOPMENT:
-		return "DEV"
+		return "env.dev"
 	case TESTING:
-		return "TEST"
+		return "env.test"
 	}
 
 	return ""

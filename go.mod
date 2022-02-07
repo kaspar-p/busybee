@@ -1,5 +1,6 @@
 module github.com/kaspar-p/busybee
 
+// +heroku goVersion go1.17
 go 1.17
 
 require github.com/robfig/cron v1.2.0

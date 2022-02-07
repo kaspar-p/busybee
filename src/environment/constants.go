@@ -1,7 +1,6 @@
 package environment
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/kaspar-p/busybee/src/discord"
@@ -15,7 +14,7 @@ type Config struct {
 }
 
 func InitializeViper(mode Mode) *Config {
-	viper.SetConfigName("env.prod")
+	viper.SetConfigName(mode.ConfigFile())
 	viper.AddConfigPath(".")
 	viper.AutomaticEnv()
 	viper.SetConfigType("yml")
@@ -27,16 +26,16 @@ func InitializeViper(mode Mode) *Config {
 
 	return &Config{
 		DiscordConfig: &discord.DiscordConfig{
-			BotToken: viper.GetString(fmt.Sprintf("BUSYBEE_BOT.%s.TOKEN", mode.ConfigString())),
-			AppId:    viper.GetString(fmt.Sprintf("BUSYBEE_BOT.%s.APP_ID", mode.ConfigString())),
+			BotToken: viper.GetString("BUSYBEE_BOT.TOKEN"),
+			AppId:    viper.GetString("BUSYBEE_BOT.APP_ID"),
 		},
 		DatabaseConfig: &persist.DatabaseConfig{
-			ConnectionUrl: viper.GetString(fmt.Sprintf("MONGO_DB.%s.CONNECTION_URL", mode.ConfigString())),
-			DatabaseName:  viper.GetString(fmt.Sprintf("MONGO_DB.%s.DATABASE_NAME", mode.ConfigString())),
+			ConnectionUrl: viper.GetString("MONGO_DB.CONNECTION_URL"),
+			DatabaseName:  viper.GetString("MONGO_DB.DATABASE_NAME"),
 			CollectionNames: &persist.CollectionNames{
-				Users:     viper.GetString(fmt.Sprintf("MONGO_DB.%s.COLLECTIONS.USERS_NAME", mode.ConfigString())),
-				BusyTimes: viper.GetString(fmt.Sprintf("MONGO_DB.%s.COLLECTIONS.BUSYTIMES_NAME", mode.ConfigString())),
-				Guilds:    viper.GetString(fmt.Sprintf("MONGO_DB.%s.COLLECTIONS.GUILDS_NAME", mode.ConfigString())),
+				Users:     viper.GetString("MONGO_DB.COLLECTIONS.USERS_NAME"),
+				BusyTimes: viper.GetString("MONGO_DB.COLLECTIONS.BUSYTIMES_NAME"),
+				Guilds:    viper.GetString("MONGO_DB.COLLECTIONS.GUILDS_NAME"),
 			},
 		},
 	}

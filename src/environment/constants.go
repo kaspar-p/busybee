@@ -20,8 +20,10 @@ func DecideMode() Mode {
 	if os.Getenv("MODE") == PRODUCTION.String() {
 		// This line is necessary for heroku to run the `web` process correctly
 		// PORT needs to be fetched at some point
+		log.Println("Port was before:", os.Getenv("PORT"))
 		os.Setenv("PORT", "3000")
-		log.Println("Port is: ", os.Getenv("PORT"))
+		os.Setenv("$PORT", "3000")
+		log.Println("Port is now:", os.Getenv("PORT"))
 
 		mode = PRODUCTION
 	} else {

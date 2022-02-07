@@ -191,7 +191,7 @@ func downloadFile(url string) (string, error) {
 	}
 	defer response.Body.Close()
 
-	filepath := os.TempDir() + createRandomString()
+	filepath := os.TempDir() + "/" + createRandomString()
 
 	output, err := os.Create(filepath)
 	if err != nil {

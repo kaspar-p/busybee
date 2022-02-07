@@ -16,7 +16,12 @@ type Config struct {
 
 func DecideMode() Mode {
 	var mode Mode
+
 	if os.Getenv("MODE") == PRODUCTION.String() {
+		// This line is necessary for heroku to run the `web` process correctly
+		// PORT needs to be fetched at some point
+		log.Println("Port is: ", os.Getenv("PORT"))
+
 		mode = PRODUCTION
 	} else {
 		mode = DEVELOPMENT

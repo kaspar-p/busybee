@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base32"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -191,7 +192,18 @@ func downloadFile(url string) (string, error) {
 	}
 	defer response.Body.Close()
 
-	filepath := os.TempDir() + "/" + createRandomString()
+	var perms fs.FileMode = 0o0700
+	err = os.Mkdir("./tmp/", perms)
+
+	if err != nil && !os.IsExist(err) {
+		log.Println("Error while mkdir tmp: ", err)
+
+		return "", errors.Wrap(err, "Error encountered while making temp directory!")
+	} else if os.IsExist(err) {
+		log.Println("Skipping creating temp directory - already exists.")
+	}
+
+	filepath := "./tmp/" + createRandomString()
 
 	output, err := os.Create(filepath)
 	if err != nil {

@@ -44,7 +44,7 @@ func (database *DatabaseType) GetRoleIdsForGuilds(guildIds []string) []GuildRole
 
 	cursor, err := database.guilds.Find(context.TODO(), filter)
 	if err != nil {
-		log.Panic("Error getting cursor when finding all users. Error: ", err)
+		log.Println("Error getting cursor when finding all users. Error: ", err)
 		panic(&GetUserError{Err: err})
 	}
 
@@ -53,7 +53,7 @@ func (database *DatabaseType) GetRoleIdsForGuilds(guildIds []string) []GuildRole
 	var results []bson.M
 
 	if err = cursor.All(context.TODO(), &results); err != nil {
-		log.Panic("Error getting results from cursor when getting all users. Error: ", err)
+		log.Println("Error getting results from cursor when getting all users. Error: ", err)
 		panic(&GetUserError{Err: err})
 	}
 
@@ -62,13 +62,13 @@ func (database *DatabaseType) GetRoleIdsForGuilds(guildIds []string) []GuildRole
 	for _, result := range results {
 		guildId, found := result["GuildId"].(string)
 		if !found {
-			log.Panic("Key 'GuildId' not found on guild-role pair!")
+			log.Println("Key 'GuildId' not found on guild-role pair!")
 			panic(&GetGuildRolePairError{})
 		}
 
 		roleId, found := result["RoleId"].(string)
 		if !found {
-			log.Panic("Key 'RoleId' not found on guild-role pair!")
+			log.Println("Key 'RoleId' not found on guild-role pair!")
 			panic(&GetGuildRolePairError{})
 		}
 
@@ -89,13 +89,13 @@ func (database *DatabaseType) GetRoleIdsForGuild(guildId string) []string {
 
 	cursor, err := database.guilds.Find(context.TODO(), filter)
 	if err != nil {
-		log.Panic("Error getting cursor when finding all users. Error: ", err)
+		log.Println("Error getting cursor when getting all guilds. Error: ", err)
 		panic(&GetGuildRolePairError{Err: err})
 	}
 
 	var results []bson.M
 	if err = cursor.All(context.TODO(), &results); err != nil {
-		log.Panic("Error getting results from cursor when getting all users. Error: ", err)
+		log.Println("Error getting results from cursor when getting all users. Error: ", err)
 		panic(&GetGuildRolePairError{Err: err})
 	}
 
@@ -104,7 +104,7 @@ func (database *DatabaseType) GetRoleIdsForGuild(guildId string) []string {
 	for _, result := range results {
 		roleId, found := result["RoleId"].(string)
 		if !found {
-			log.Panic("Key 'RoleId' not found on a guild-role pair!")
+			log.Println("Key 'RoleId' not found on a guild-role pair!")
 			panic(&GetGuildRolePairError{Err: err})
 		}
 
@@ -112,6 +112,44 @@ func (database *DatabaseType) GetRoleIdsForGuild(guildId string) []string {
 	}
 
 	return roleIds
+}
+
+func (database *DatabaseType) GetRoleIdForGuild(guildId string) string {
+	return database.GetRoleIdsForGuild(guildId)[0]
+}
+
+func (database *DatabaseType) GetAllGuildRolePairs() (guildRoleMap map[string]string) {
+	cursor, err := database.guilds.Find(context.TODO(), bson.D{})
+	if err != nil {
+		log.Panic("Error getting cursor when getting all guild role pairs. Error: ", err)
+		panic(&GetGuildRolePairError{Err: err})
+	}
+
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		log.Panic("Error getting cursor when getting all guild role pairs. Error: ", err)
+		panic(&GetGuildRolePairError{Err: err})
+	}
+
+	guildRoleMap = make(map[string]string)
+
+	for _, result := range results {
+		guildId, found := result["GuildId"].(string)
+		if !found {
+			log.Println("Key 'GuildId' not found on guild-role pair!")
+			panic(&GetGuildRolePairError{Err: err})
+		}
+
+		roleId, found := result["RoleId"].(string)
+		if !found {
+			log.Println("Key 'RoleId' not found on guild-role pair!")
+			panic(&GetGuildRolePairError{Err: err})
+		}
+
+		guildRoleMap[guildId] = roleId
+	}
+
+	return guildRoleMap
 }
 
 func (database *DatabaseType) RemoveGuildRolePairByGuildAndRole(guildId, roleId string) error {

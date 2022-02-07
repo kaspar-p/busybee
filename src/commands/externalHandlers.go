@@ -5,8 +5,6 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/kaspar-p/busybee/src/entities"
-	"github.com/kaspar-p/busybee/src/ingest"
 	"github.com/kaspar-p/busybee/src/persist"
 	"github.com/kaspar-p/busybee/src/update"
 	"github.com/pkg/errors"
@@ -64,16 +62,7 @@ func HandleCommand(database *persist.DatabaseType) InnerHandleCommandType {
 
 			log.Println("Executing handler for message: ", key)
 
-			// Execute the handler that matches the command - parse the union type
-			var err error
-
-			switch handler.handlerType {
-			case DatabaseTouchingCommandHandlerType:
-				err = handler.unionToDatabaseTouchingCommandHandler()(database, discord, message)
-			case PureCommandHandlerType:
-				err = handler.unionToPureCommandHandler()(discord, message)
-			}
-
+			err := handler(database, discord, message)
 			if err != nil {
 				log.Printf("Error encountered while executing command %s. Error: %v.\n", command, err)
 
@@ -92,17 +81,6 @@ func BotIsReady(database *persist.DatabaseType) InnerBotIsReadyType {
 	return func(discord *discordgo.Session, isReady *discordgo.Ready) {
 		log.Println("Bot successfully connected! Press CMD + C at any time to exit.")
 		log.Println("Bot is a part of", len(isReady.Guilds), "guilds!")
-
-		guildIds := make([]string, 0)
-		for _, guild := range isReady.Guilds {
-			guildIds = append(guildIds, guild.ID)
-		}
-
-		// Populate the users map
-		entities.InitializeUsers(guildIds)
-
-		// Connect to the database
-		ingest.FillMapsWithDatabaseData(database, guildIds)
 
 		// SLASH COMMAND CODE
 		// clearAndRegisterCommands(discord)
@@ -125,7 +103,7 @@ func BotJoinedNewGuild(database *persist.DatabaseType) InnerBotJoinedNewGuildTyp
 
 			// Populate that in the users map
 			// entities.Users[event.Guild.ID] = make(map[string]*entities.User)
-			log.Println("-> Not doing anything about it, though.")
+			log.Println("\t-> Not doing anything about it, though.")
 		}
 	}
 }
@@ -133,6 +111,8 @@ func BotJoinedNewGuild(database *persist.DatabaseType) InnerBotJoinedNewGuildTyp
 func BotRemovedFromGuild(database *persist.DatabaseType) InnerBotRemovedFromGuildType {
 	return func(discord *discordgo.Session, event *discordgo.GuildDelete) {
 		guildId := event.Guild.ID
+		roleId := database.GetRoleIdForGuild(guildId)
+
 		if event.Unavailable {
 			log.Println("Server has become unavailable. Guild Id: ", guildId)
 
@@ -152,7 +132,7 @@ func BotRemovedFromGuild(database *persist.DatabaseType) InnerBotRemovedFromGuil
 		// 	- remove role with guild id
 
 		// Remove role from discord
-		err := discord.GuildRoleDelete(guildId, update.GuildRoleMap[guildId])
+		err := discord.GuildRoleDelete(guildId, roleId)
 		if err != nil {
 			log.Println("Error removing busy role from guild:", guildId, "when getting removed. Error: ", err)
 
@@ -166,13 +146,5 @@ func BotRemovedFromGuild(database *persist.DatabaseType) InnerBotRemovedFromGuil
 
 			panic(errors.Wrap(err, "Error removing all data of a guild!"))
 		}
-
-		// Remove all data in memory
-
-		// Delete users
-		delete(entities.Users, guildId)
-
-		// Delete GuildRolePair
-		delete(update.GuildRoleMap, guildId)
 	}
 }

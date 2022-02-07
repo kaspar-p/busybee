@@ -3,6 +3,7 @@ package persist
 import (
 	"context"
 	"log"
+	"sort"
 	"time"
 
 	"github.com/kaspar-p/busybee/src/entities"
@@ -108,6 +109,60 @@ func (database *DatabaseType) RemoveAllBusyTimesInGuild(guildId string) error {
 	log.Printf("Deleted %d users that belonged to guild %s.\n", deleteResult.DeletedCount, guildId)
 
 	return errors.Wrap(err, "Error deleting all busy times from a guild")
+}
+
+func (database *DatabaseType) GetTodaysEventsForUser(userId string) []*entities.BusyTime {
+	allEventsForUser := database.GetBusyTimesForUser(userId)
+
+	year, month, day := time.Now().Date()
+	beginningOfDay := time.Date(year, month, day, 0, 0, 0, 0, time.Local)
+	endOfDay := time.Date(year, month, day, 23, 59, 59, 0, time.Local)
+
+	todaysEvents := make([]*entities.BusyTime, 0)
+
+	for _, busyTime := range allEventsForUser {
+		if busyTime.Start.After(beginningOfDay) &&
+			busyTime.End.Before(endOfDay) &&
+			busyTime.End.After(time.Now()) {
+			log.Println("Adding event", busyTime.Title, "starting at:", busyTime.Start, "and ending at:", busyTime.End)
+			todaysEvents = append(todaysEvents, busyTime)
+		}
+	}
+
+	// Sort them by start time
+	sort.Slice(todaysEvents, func(i, j int) bool {
+		return todaysEvents[i].Start.Unix() < todaysEvents[j].Start.Unix()
+	})
+
+	return todaysEvents
+}
+
+func (database *DatabaseType) GetBusyTimesForUser(userId string) []*entities.BusyTime {
+	filter := bson.D{
+		{Key: "OwnerId", Value: userId},
+	}
+
+	cursor, err := database.busyTimes.Find(context.TODO(), filter)
+	if err != nil {
+		log.Println("Error getting cursor when finding all busyTimes objects. Error: ", err)
+		panic(&GetBusyTimeError{Err: err})
+	}
+
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		log.Println("Error getting results from cursor when getting all busyTimes objects. Error: ", err)
+		panic(&GetBusyTimeError{Err: err})
+	}
+
+	// Create BusyTime's out of the results
+	busyTimesArray := make([]*entities.BusyTime, 0)
+
+	for _, result := range results {
+		newBusyTime := CreateBusyTimeFromResult(result)
+		busyTimesArray = append(busyTimesArray, &newBusyTime)
+	}
+
+	return busyTimesArray
 }
 
 func (database *DatabaseType) GetBusyTimes() []*entities.BusyTime {

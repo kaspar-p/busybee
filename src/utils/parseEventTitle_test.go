@@ -1,10 +1,10 @@
-package ingest_test
+package utils_test
 
 import (
 	"testing"
 
-	. "github.com/kaspar-p/busybee/src/ingest"
 	"github.com/kaspar-p/busybee/src/test"
+	. "github.com/kaspar-p/busybee/src/utils"
 )
 
 func TestParseEventTitle(t *testing.T) {

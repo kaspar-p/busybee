@@ -7,6 +7,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/kaspar-p/busybee/src/entities"
+	"github.com/kaspar-p/busybee/src/persist"
 	"github.com/pkg/errors"
 )
 
@@ -14,7 +15,7 @@ func toNiceTimeString(eventTime time.Time) string {
 	return eventTime.Format("3:04 PM")
 }
 
-func HandleWyd(discord *discordgo.Session, message *discordgo.MessageCreate) error {
+func validateWydStructure(discord *discordgo.Session, message *discordgo.MessageCreate) error {
 	expectedArgumentNum := 2
 	if len(strings.Split(message.Content, " ")) != expectedArgumentNum {
 		log.Println("Free command had false arguments")
@@ -33,20 +34,30 @@ func HandleWyd(discord *discordgo.Session, message *discordgo.MessageCreate) err
 		return err
 	}
 
+	return nil
+}
+
+func HandleWyd(database *persist.DatabaseType, discord *discordgo.Session, message *discordgo.MessageCreate) error {
+	err := validateWydStructure(discord, message)
+	if err != nil {
+		return err
+	}
+
 	mentionedId := message.Mentions[0].ID
 
 	if mentionedId == discord.State.User.ID {
 		log.Println("Asked the bot wyd!")
 
-		err := SendSingleMessage(discord, message.ChannelID, "nothing much \\;)")
+		err = SendSingleMessage(discord, message.ChannelID, "nothing much \\;)")
 
 		return err
 	}
 
-	if _, ok := entities.Users[message.GuildID][mentionedId]; !ok {
+	user, userExists := database.GetUser(message.GuildID, mentionedId)
+	if !userExists {
 		log.Printf("Requirement failed - sending error message %s.\n", "user DNE")
 
-		err := SendSingleMessage(discord,
+		err = SendSingleMessage(discord,
 			message.ChannelID,
 			"that user does not exist within the system. please ask them to enrol \\:)",
 		)
@@ -54,18 +65,16 @@ func HandleWyd(discord *discordgo.Session, message *discordgo.MessageCreate) err
 		return err
 	}
 
-	mentionedUser := entities.Users[message.GuildID][mentionedId]
-	busyTimesToday := mentionedUser.GetTodaysEvents()
+	busyTimesToday := database.GetTodaysEventsForUser(user.Id)
 
 	if len(busyTimesToday) == 0 {
-		err := SendSingleMessage(discord, message.ChannelID, "nothing going on for the rest of today :)")
+		err = SendSingleMessage(discord, message.ChannelID, "nothing going on for the rest of today :)")
 
 		return err
 	}
 
-	embed := GenerateWydEmbed(busyTimesToday, mentionedUser)
-
-	_, err := discord.ChannelMessageSendEmbed(message.ChannelID, embed)
+	embed := GenerateWydEmbed(busyTimesToday, user)
+	_, err = discord.ChannelMessageSendEmbed(message.ChannelID, embed)
 
 	return errors.Wrap(err, "Error sending response to .wyd message.")
 }

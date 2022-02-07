@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/kaspar-p/busybee/src/entities"
+	"github.com/kaspar-p/busybee/src/persist"
 	"github.com/kaspar-p/busybee/src/utils"
 	"github.com/pkg/errors"
 )
@@ -25,14 +25,8 @@ func sortKeysOfMap(unsortedMap map[string]string) []string {
 	return keys
 }
 
-func HandleWhoBusy(discord *discordgo.Session, message *discordgo.MessageCreate) error {
-	busyUsers := make(map[string]string)
-
-	for _, user := range entities.Users[message.GuildID] {
-		if user.CurrentlyBusy.IsBusy {
-			busyUsers[user.Name] = user.CurrentlyBusy.BusyWith
-		}
-	}
+func HandleWhoBusy(database *persist.DatabaseType, discord *discordgo.Session, message *discordgo.MessageCreate) error {
+	busyUsers := database.GetCurrentlyBusyUsers()
 
 	keys := sortKeysOfMap(busyUsers)
 	embed := GenerateWhoBusyEmbed(busyUsers, keys)

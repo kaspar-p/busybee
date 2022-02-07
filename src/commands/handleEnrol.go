@@ -62,7 +62,7 @@ func HandleEnrol(database *persist.DatabaseType, discord *discordgo.Session, mes
 	ingest.IngestNewData(database, message, events)
 
 	// Finally, update the roles when a new user is added
-	update.UpdateSingleGuild(discord, message.GuildID)
+	update.UpdateSingleGuild(database, discord, message.GuildID)
 
 	err = SendSingleMessage(discord, message.ChannelID, "you're enrolled \\:)")
 

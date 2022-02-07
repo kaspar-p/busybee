@@ -22,8 +22,6 @@ func main() {
 
 	log.Println(config.DatabaseConfig)
 
-	update.InitializeGuildRoleMap()
-
 	// Connect to the database
 	database, closeDatabase := persist.InitializeDatabase(config.DatabaseConfig)
 	defer closeDatabase()

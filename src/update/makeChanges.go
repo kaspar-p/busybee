@@ -58,10 +58,6 @@ func DeleteGuildRolePairFromDatabase(database *persist.DatabaseType, guildId, ro
 	}
 }
 
-func ChangeGuildRoleMapEntry(guildId, newRoleId string) {
-	GuildRoleMap[guildId] = newRoleId
-}
-
 func CreateRoleInDiscord(discord *discordgo.Session, guildId string) string {
 	// There was no "busy" role - create one
 	log.Println("Creating busy role in guild: ", guildId)
@@ -81,9 +77,6 @@ func CreateRole(database *persist.DatabaseType, discord *discordgo.Session, guil
 
 	// Add the role to the database
 	database.AddGuildRolePair(guildId, newRoleId)
-
-	// Set global busy role ID to be the new ID
-	ChangeGuildRoleMapEntry(guildId, newRoleId)
 
 	yellowColor := 12847710
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/kaspar-p/busybee/src/entities"
+	"github.com/kaspar-p/busybee/src/persist"
 	"github.com/kaspar-p/busybee/src/utils"
 	"github.com/pkg/errors"
 )
@@ -30,12 +31,19 @@ func validateStructure(message *discordgo.MessageCreate) string {
 	return ""
 }
 
-func getNextFreeIntervalOfSize(user *entities.User, startingAt time.Time, numberOfHours int) (time.Time, bool) {
-	for i := 1; i < len(user.BusyTimes); i++ {
-		currentBusyTime := user.BusyTimes[i]
+func getNextFreeIntervalOfSize(
+	database *persist.DatabaseType,
+	user *entities.User,
+	startingAt time.Time,
+	numberOfHours int,
+) (time.Time, bool) {
+	userBusyTimes := database.GetBusyTimesForUser(user.Id)
+
+	for i := 1; i < len(userBusyTimes); i++ {
+		currentBusyTime := userBusyTimes[i]
 
 		if currentBusyTime.Start.After(startingAt) {
-			previousBusyTime := user.BusyTimes[i-1]
+			previousBusyTime := userBusyTimes[i-1]
 
 			var intervalLength int
 			if previousBusyTime.End.Before(startingAt) {
@@ -67,14 +75,19 @@ func getLaterTime(time1, time2 time.Time) time.Time {
 	}
 }
 
-func getNextCommonFreeNumberOfHoursTwo(user1, user2 *entities.User, numberOfHours int) (time.Time, bool) {
-	latestEndTime := getLaterTime(user1.GetLatestEndTime(), user2.GetLatestEndTime())
+func getNextCommonFreeNumberOfHoursTwo(
+	database *persist.DatabaseType,
+	user1,
+	user2 *entities.User,
+	numberOfHours int,
+) (time.Time, bool) {
+	latestEndTime := getLaterTime(database.GetLatestEndTime(user1.Id), database.GetLatestEndTime(user2.Id))
 	numberOfHoursUntilLatestEndTime := int(time.Until(latestEndTime).Hours())
 
 	for hourOffset := 0; hourOffset < numberOfHoursUntilLatestEndTime; hourOffset++ {
 		startTime := time.Now().Add(time.Duration(hourOffset) * time.Hour)
-		user1NextStartFreeTime, foundStart1 := getNextFreeIntervalOfSize(user1, startTime, numberOfHours)
-		user2NextStartFreeTime, foundStart2 := getNextFreeIntervalOfSize(user2, startTime, numberOfHours)
+		user1NextStartFreeTime, foundStart1 := getNextFreeIntervalOfSize(database, user1, startTime, numberOfHours)
+		user2NextStartFreeTime, foundStart2 := getNextFreeIntervalOfSize(database, user2, startTime, numberOfHours)
 
 		log.Printf(
 			"# hours: %d. # hour offset: %d. user1 next free start time %v, user 2 next free start time %v\n",
@@ -109,13 +122,17 @@ func getNextCommonFreeNumberOfHoursTwo(user1, user2 *entities.User, numberOfHour
 	return time.Now(), false
 }
 
-func getNextCommonFreeNumberOfHoursMany(users []*entities.User, numberOfHours int) (time.Time, bool) {
+func getNextCommonFreeNumberOfHoursMany(
+	database *persist.DatabaseType,
+	users []*entities.User,
+	numberOfHours int,
+) (time.Time, bool) {
 	var latestFreeCommonTime time.Time
 
 	set := false
 
 	if len(users) == 1 {
-		return getNextFreeIntervalOfSize(users[0], time.Now(), numberOfHours)
+		return getNextFreeIntervalOfSize(database, users[0], time.Now(), numberOfHours)
 	}
 
 	for i := 0; i < len(users)-1; i++ {
@@ -123,7 +140,7 @@ func getNextCommonFreeNumberOfHoursMany(users []*entities.User, numberOfHours in
 			userI := users[i]
 			userJ := users[j]
 
-			nextCommonFreeTime, found := getNextCommonFreeNumberOfHoursTwo(userI, userJ, numberOfHours)
+			nextCommonFreeTime, found := getNextCommonFreeNumberOfHoursTwo(database, userI, userJ, numberOfHours)
 			if !found {
 				return time.Now(), false
 			}
@@ -142,7 +159,11 @@ func toNiceDateTimeString(eventTime time.Time) string {
 	return eventTime.Format("03:04 PM 01/02")
 }
 
-func HandleWhenFree(discord *discordgo.Session, message *discordgo.MessageCreate) error {
+func HandleWhenFree(
+	database *persist.DatabaseType,
+	discord *discordgo.Session,
+	message *discordgo.MessageCreate,
+) error {
 	errorMessage := validateStructure(message)
 	if errorMessage != "" {
 		log.Println("Command .whenFree error with message:", errorMessage)
@@ -152,7 +173,7 @@ func HandleWhenFree(discord *discordgo.Session, message *discordgo.MessageCreate
 	}
 
 	// Convert mentions into list of User struct
-	mentionedBot, mentionedUsers, err := ParseMentionedUsers(discord, message)
+	mentionedBot, mentionedUsers, err := ParseMentionedUsers(database, discord, message)
 	if err != nil {
 		return errors.Wrap(err, "Error parsing mentioned users!")
 	}
@@ -162,7 +183,7 @@ func HandleWhenFree(discord *discordgo.Session, message *discordgo.MessageCreate
 	}
 
 	maxHours := 6
-	timePairs := GetCommonHours(mentionedUsers, maxHours)
+	timePairs := GetCommonHours(database, mentionedUsers, maxHours)
 
 	embed := GenerateWhenFreeEmbed(timePairs)
 	err = SendSingleEmbed(discord, message.ChannelID, embed)
@@ -170,11 +191,11 @@ func HandleWhenFree(discord *discordgo.Session, message *discordgo.MessageCreate
 	return err
 }
 
-func GetCommonHours(mentionedUsers []*entities.User, maxHours int) []TimePair {
+func GetCommonHours(database *persist.DatabaseType, mentionedUsers []*entities.User, maxHours int) []TimePair {
 	timePairs := make([]TimePair, maxHours)
 
 	for hour := 1; hour < maxHours+1; hour++ {
-		timeFound, found := getNextCommonFreeNumberOfHoursMany(mentionedUsers, hour)
+		timeFound, found := getNextCommonFreeNumberOfHoursMany(database, mentionedUsers, hour)
 
 		var timeText string
 		if !found {
@@ -192,16 +213,20 @@ func GetCommonHours(mentionedUsers []*entities.User, maxHours int) []TimePair {
 	return timePairs
 }
 
-func ParseMentionedUsers(discord *discordgo.Session, message *discordgo.MessageCreate) (bool, []*entities.User, error) {
+func ParseMentionedUsers(
+	database *persist.DatabaseType,
+	discord *discordgo.Session,
+	message *discordgo.MessageCreate,
+) (bool, []*entities.User, error) {
 	mentionedUsers := make([]*entities.User, 0)
 
 	for _, mentionedUser := range message.Mentions {
-		user, userExists := entities.Users[message.GuildID][mentionedUser.ID]
-
 		// If the user was busybee
 		if mentionedUser.ID == discord.State.User.ID {
 			return false, nil, TalkToBusyBee(discord, message, ".whenfree")
 		}
+
+		user, userExists := database.GetUser(message.GuildID, mentionedUser.ID)
 
 		// If the user is not in the system
 		if userExists {

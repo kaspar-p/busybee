@@ -47,8 +47,6 @@ func InitializeViper(mode Mode) *Config {
 		}
 	}
 
-	log.Println("second", viper.GetString("BUSYBEE_BOT.TOKEN"))
-
 	return &Config{
 		DiscordConfig: &discord.DiscordConfig{
 			BotToken: viper.GetString("BUSYBEE_BOT.TOKEN"),

@@ -2,6 +2,7 @@ package environment
 
 import (
 	"log"
+	"os"
 
 	"github.com/kaspar-p/busybee/src/discord"
 	"github.com/kaspar-p/busybee/src/persist"
@@ -13,16 +14,32 @@ type Config struct {
 	DatabaseConfig *persist.DatabaseConfig
 }
 
-func InitializeViper(mode Mode) *Config {
-	viper.SetConfigName(mode.ConfigFile())
-	viper.AddConfigPath(".")
-	viper.AutomaticEnv()
-	viper.SetConfigType("yml")
-
-	err := viper.ReadInConfig()
-	if err != nil {
-		log.Panic("Error reading from environment variables file: ", err)
+func DecideMode() Mode {
+	var mode Mode
+	if os.Getenv("MODE") == PRODUCTION.String() {
+		mode = PRODUCTION
+	} else {
+		mode = DEVELOPMENT
 	}
+
+	return mode
+}
+
+func InitializeViper(mode Mode) *Config {
+	if mode == PRODUCTION {
+		viper.AutomaticEnv()
+	} else {
+		viper.SetConfigName(mode.ConfigFile())
+		viper.AddConfigPath(".")
+		viper.SetConfigType("yml")
+
+		err := viper.ReadInConfig()
+		if err != nil {
+			log.Panic("Error reading from environment variables file: ", err)
+		}
+	}
+
+	log.Println("second", viper.GetString("BUSYBEE_BOT.TOKEN"))
 
 	return &Config{
 		DiscordConfig: &discord.DiscordConfig{

@@ -79,7 +79,7 @@ func GenerateWydEmbed(busyTimesToday []*entities.BusyTime, mentionedUser *entiti
 
 	resultString += "```"
 
-	embed := CreateTableEmbed(mentionedUser.Name, resultString)
+	embed := CreateGenericEmbed(mentionedUser.Name, resultString)
 
 	return embed
 }

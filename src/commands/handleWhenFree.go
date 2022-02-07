@@ -10,6 +10,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/kaspar-p/busybee/src/entities"
 	"github.com/kaspar-p/busybee/src/utils"
+	"github.com/pkg/errors"
 )
 
 type TimePair struct {
@@ -151,9 +152,13 @@ func HandleWhenFree(discord *discordgo.Session, message *discordgo.MessageCreate
 	}
 
 	// Convert mentions into list of User struct
-	mentionedUsers, err := ParseMentionedUsers(discord, message)
+	mentionedBot, mentionedUsers, err := ParseMentionedUsers(discord, message)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Error parsing mentioned users!")
+	}
+
+	if mentionedBot {
+		return TalkToBusyBee(discord, message, "whenfree")
 	}
 
 	maxHours := 6
@@ -187,7 +192,7 @@ func GetCommonHours(mentionedUsers []*entities.User, maxHours int) []TimePair {
 	return timePairs
 }
 
-func ParseMentionedUsers(discord *discordgo.Session, message *discordgo.MessageCreate) ([]*entities.User, error) {
+func ParseMentionedUsers(discord *discordgo.Session, message *discordgo.MessageCreate) (bool, []*entities.User, error) {
 	mentionedUsers := make([]*entities.User, 0)
 
 	for _, mentionedUser := range message.Mentions {
@@ -195,7 +200,7 @@ func ParseMentionedUsers(discord *discordgo.Session, message *discordgo.MessageC
 
 		// If the user was busybee
 		if mentionedUser.ID == discord.State.User.ID {
-			return nil, TalkToBusyBee(discord, message, ".whenfree")
+			return false, nil, TalkToBusyBee(discord, message, ".whenfree")
 		}
 
 		// If the user is not in the system
@@ -209,11 +214,11 @@ func ParseMentionedUsers(discord *discordgo.Session, message *discordgo.MessageC
 				"the @ mentioned user `"+mentionedUser.Username+"` isn't in the system. ask them to enrol pls \\:)",
 			)
 
-			return nil, err
+			return true, nil, err
 		}
 	}
 
-	return mentionedUsers, nil
+	return false, mentionedUsers, nil
 }
 
 func GenerateWhenFreeEmbed(timePairs []TimePair) *discordgo.MessageEmbed {
@@ -233,5 +238,5 @@ func GenerateWhenFreeEmbed(timePairs []TimePair) *discordgo.MessageEmbed {
 
 	descriptionString := utils.WrapStringInCodeBlock(bodyString)
 
-	return CreateTableEmbed("hours fwee \\:)", descriptionString)
+	return CreateGenericEmbed("hours fwee \\:)", descriptionString)
 }

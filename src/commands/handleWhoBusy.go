@@ -65,7 +65,7 @@ func GenerateWhoBusyEmbed(busyUsers map[string]string, keys []string) *discordgo
 		description = utils.WrapStringInCodeBlock(resultString)
 	}
 
-	embed := CreateTableEmbed(title, description)
+	embed := CreateGenericEmbed(title, description)
 
 	return embed
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func CreateTableEmbed(title, description string) *discordgo.MessageEmbed {
+func CreateGenericEmbed(title, description string) *discordgo.MessageEmbed {
 	embed := discordgo.MessageEmbed{
 		Type:        "rich",
 		Title:       title,

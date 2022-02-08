@@ -3,7 +3,6 @@ package update
 import (
 	"log"
 	"sync"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/kaspar-p/busybee/src/entities"
@@ -29,7 +28,7 @@ func CheckIfUserBusy(discord *discordgo.Session, user *entities.User, guildId st
 
 	// Add role back if necessary
 	for _, busyTime := range user.BusyTimes {
-		now := time.Now()
+		now := utils.GetNow()
 
 		// Check if now is within the bounds of the event
 		if busyTime.Start.Before(now) && busyTime.End.After(now) {

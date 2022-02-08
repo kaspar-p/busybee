@@ -5,6 +5,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/kaspar-p/busybee/src/utils"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -57,7 +58,7 @@ func (user *User) IsBusy(t time.Time) bool {
 }
 
 func (user *User) GetTodaysEvents() []*BusyTime {
-	year, month, day := time.Now().Date()
+	year, month, day := utils.GetNow().Date()
 	beginningOfDay := time.Date(year, month, day, 0, 0, 0, 0, time.Local)
 	endOfDay := time.Date(year, month, day, 23, 59, 59, 0, time.Local)
 
@@ -66,7 +67,7 @@ func (user *User) GetTodaysEvents() []*BusyTime {
 	for _, busyTime := range user.BusyTimes {
 		if busyTime.Start.After(beginningOfDay) &&
 			busyTime.End.Before(endOfDay) &&
-			busyTime.End.After(time.Now()) {
+			busyTime.End.After(utils.GetNow()) {
 			log.Println("Adding event", busyTime.Title, "starting at:", busyTime.Start, "and ending at:", busyTime.End)
 			todaysEvents = append(todaysEvents, busyTime)
 		}

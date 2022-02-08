@@ -30,7 +30,7 @@ func validateStructure(message *discordgo.MessageCreate) string {
 	return ""
 }
 
-func getNextFreeIntervalOfSize(user *entities.User, startingAt time.Time, numberOfHours int) (time.Time, bool) {
+func getNextFreeIntervalOfSize(user *entities.User, startingAt time.Time, numberOfHours int) (*time.Time, bool) {
 	for i := 1; i < len(user.BusyTimes); i++ {
 		currentBusyTime := user.BusyTimes[i]
 
@@ -47,13 +47,13 @@ func getNextFreeIntervalOfSize(user *entities.User, startingAt time.Time, number
 			}
 
 			if intervalLength >= numberOfHours {
-				return previousBusyTime.End, true
+				return &previousBusyTime.End, true
 			}
 		}
 	}
 
 	// Now() as a standin time.Time, not relevant
-	return time.Now(), false
+	return nil, false
 }
 
 func getLaterTime(time1, time2 time.Time) time.Time {
@@ -67,12 +67,12 @@ func getLaterTime(time1, time2 time.Time) time.Time {
 	}
 }
 
-func getNextCommonFreeNumberOfHoursTwo(user1, user2 *entities.User, numberOfHours int) (time.Time, bool) {
+func getNextCommonFreeNumberOfHoursTwo(user1, user2 *entities.User, numberOfHours int) (*time.Time, bool) {
 	latestEndTime := getLaterTime(user1.GetLatestEndTime(), user2.GetLatestEndTime())
 	numberOfHoursUntilLatestEndTime := int(time.Until(latestEndTime).Hours())
 
 	for hourOffset := 0; hourOffset < numberOfHoursUntilLatestEndTime; hourOffset++ {
-		startTime := time.Now().Add(time.Duration(hourOffset) * time.Hour)
+		startTime := utils.GetNow().Add(time.Duration(hourOffset) * time.Hour)
 		user1NextStartFreeTime, foundStart1 := getNextFreeIntervalOfSize(user1, startTime, numberOfHours)
 		user2NextStartFreeTime, foundStart2 := getNextFreeIntervalOfSize(user2, startTime, numberOfHours)
 
@@ -86,36 +86,36 @@ func getNextCommonFreeNumberOfHoursTwo(user1, user2 *entities.User, numberOfHour
 
 		// Exit if they are not free at all for this number of hours
 		if !foundStart1 || !foundStart2 {
-			return time.Now(), false
+			return nil, false
 		}
 
 		// If they are both equal at the same time
-		if user1NextStartFreeTime.Equal(user2NextStartFreeTime) {
+		if user1NextStartFreeTime.Equal(*user2NextStartFreeTime) {
 			return user2NextStartFreeTime, true
-		} else if (user1NextStartFreeTime.After(user2NextStartFreeTime)) ||
-			(user2NextStartFreeTime.After(user1NextStartFreeTime)) {
+		} else if (user1NextStartFreeTime.After(*user2NextStartFreeTime)) ||
+			(user2NextStartFreeTime.After(*user1NextStartFreeTime)) {
 			// If the structure is (intervals end anywhere, length >= numberOfHours):
 			// .....[........time2............
 			// .........[....time1............
 			// or
 			// .........[....time2............
 			// .....[........time1............
-			laterStartTime := getLaterTime(user1NextStartFreeTime, user2NextStartFreeTime)
+			laterStartTime := getLaterTime(*user1NextStartFreeTime, *user2NextStartFreeTime)
 
-			return laterStartTime, true
+			return &laterStartTime, true
 		}
 	}
 
-	return time.Now(), false
+	return nil, false
 }
 
-func getNextCommonFreeNumberOfHoursMany(users []*entities.User, numberOfHours int) (time.Time, bool) {
-	var latestFreeCommonTime time.Time
+func getNextCommonFreeNumberOfHoursMany(users []*entities.User, numberOfHours int) (*time.Time, bool) {
+	var latestFreeCommonTime *time.Time
 
 	set := false
 
 	if len(users) == 1 {
-		return getNextFreeIntervalOfSize(users[0], time.Now(), numberOfHours)
+		return getNextFreeIntervalOfSize(users[0], utils.GetNow(), numberOfHours)
 	}
 
 	for i := 0; i < len(users)-1; i++ {
@@ -125,10 +125,10 @@ func getNextCommonFreeNumberOfHoursMany(users []*entities.User, numberOfHours in
 
 			nextCommonFreeTime, found := getNextCommonFreeNumberOfHoursTwo(userI, userJ, numberOfHours)
 			if !found {
-				return time.Now(), false
+				return nil, false
 			}
 
-			if !set || latestFreeCommonTime.Before(nextCommonFreeTime) {
+			if !set || latestFreeCommonTime.Before(*nextCommonFreeTime) {
 				set = true
 				latestFreeCommonTime = nextCommonFreeTime
 			}
@@ -180,7 +180,7 @@ func GetCommonHours(mentionedUsers []*entities.User, maxHours int) []TimePair {
 		if !found {
 			timeText = "NONE \\:("
 		} else {
-			timeText = toNiceDateTimeString(timeFound)
+			timeText = toNiceDateTimeString(*timeFound)
 		}
 
 		timePairs[hour-1] = TimePair{

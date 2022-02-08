@@ -17,6 +17,7 @@ import (
 	"github.com/kaspar-p/busybee/src/ingest"
 	"github.com/kaspar-p/busybee/src/persist"
 	"github.com/kaspar-p/busybee/src/update"
+	"github.com/kaspar-p/busybee/src/utils"
 	"github.com/pkg/errors"
 )
 
@@ -144,7 +145,7 @@ func DetermineCurrentSemester() (start, end time.Time) {
 		"December":  "Fall",
 	}
 
-	now := time.Now()
+	now := utils.GetNow()
 	startEndMap := map[string]time.Time{
 		"Winter": time.Date(now.Year(), time.January, 1, 0, 0, 0, 0, now.Location()),
 		"Summer": time.Date(now.Year(), time.May, 1, 0, 0, 0, 0, now.Location()),

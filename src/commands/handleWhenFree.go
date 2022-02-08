@@ -223,7 +223,7 @@ func ParseMentionedUsers(
 	for _, mentionedUser := range message.Mentions {
 		// If the user was busybee
 		if mentionedUser.ID == discord.State.User.ID {
-			return false, nil, TalkToBusyBee(discord, message, ".whenfree")
+			return true, nil, nil
 		}
 
 		user, userExists := database.GetUser(message.GuildID, mentionedUser.ID)

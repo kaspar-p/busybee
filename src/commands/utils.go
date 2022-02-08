@@ -26,9 +26,9 @@ func TalkToBusyBee(discord *discordgo.Session, message *discordgo.MessageCreate,
 	var response string
 
 	switch command {
-	case ".wyd":
+	case ".wyd", "wyd":
 		response = "nothing much, wbu \\;)"
-	case ".whenfree":
+	case ".whenfree", "whenfree":
 		response = "i'm always free for you \\;)"
 	}
 

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
@@ -33,40 +34,51 @@ func HandleCommand(database *persist.DatabaseType) InnerHandleCommandType {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Println("Recovered from error in handler: ", r)
+
+				err := SendSingleMessage(
+					discord,
+					message.ChannelID,
+					fmt.Sprintf("Error encountered while trying to handle '%s'. Please try again.", message.Content),
+				)
+				if err != nil {
+					log.Println("Error: error sending 'recovered' message: ", err)
+
+					return
+				}
 			}
 		}()
 
-		for key, handler := range commandHandlers {
-			command := "." + key
+		for _, command := range commandHandlers {
+			contentTrigger := "." + command.Trigger
 
 			// Check if the command matches
-			if !strings.HasPrefix(message.Content, command) {
+			if !strings.HasPrefix(message.Content, contentTrigger) {
 				continue
 			}
 
 			log.Println("Matched command: ")
 
 			// Check if the command only matches - and then garbage. e.g. .whobusybusy
-			if strings.Split(message.Content, " ")[0] != command {
+			if strings.Split(message.Content, " ")[0] != contentTrigger {
 				log.Println("Wrong command, prefix matched tho.")
 
-				err := SendSingleMessage(discord, message.ChannelID, "Wrong command. Did you mean`"+command+"`?")
+				err := SendSingleMessage(discord, message.ChannelID, "Wrong command. Did you mean`"+contentTrigger+"`?")
 				if err != nil {
 					log.Println("Error: error sending 'wrong command' message: ", err)
 
 					return
 				}
 
-				continue
+				return
 			}
 
-			log.Println("Executing handler for message: ", key)
+			log.Println("Executing handler for message: ", command.Trigger)
 
-			err := handler(database, discord, message)
+			err := command.Handler(database, discord, message)
 			if err != nil {
-				log.Printf("Error encountered while executing command %s. Error: %v.\n", command, err)
+				log.Printf("Error encountered while executing command %s. Error: %v.\n", contentTrigger, err)
 
-				err := SendSingleMessage(discord, message.ChannelID, "error while dealing with "+command+" \\:(")
+				err := SendSingleMessage(discord, message.ChannelID, "error while dealing with "+contentTrigger+" \\:(")
 				if err != nil {
 					log.Println("Error: error sending 'wrong command' message: ", err)
 

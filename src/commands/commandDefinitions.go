@@ -15,9 +15,16 @@ package commands
 // 	"register": handleEnrolment,
 // }.
 
-var commandHandlers = map[string]CommandHandler{
-	"enrol":    HandleEnrol,
-	"whobusy":  HandleWhoBusy,
-	"wyd":      HandleWyd,
-	"whenfree": HandleWhenFree,
+type Command struct {
+	Handler CommandHandler
+	Trigger string
 }
+
+var (
+	ENROL    = Command{HandleEnrol, "enrol"}
+	WHOBUSY  = Command{HandleWhoBusy, "whobusy"}
+	WYD      = Command{HandleWyd, "wyd"}
+	WHENFREE = Command{HandleWhenFree, "whenfree"}
+)
+
+var commandHandlers = []Command{ENROL, WHOBUSY, WYD, WHENFREE}

@@ -115,7 +115,14 @@ func (database *DatabaseType) GetRoleIdsForGuild(guildId string) []string {
 }
 
 func (database *DatabaseType) GetRoleIdForGuild(guildId string) string {
-	return database.GetRoleIdsForGuild(guildId)[0]
+	roleIds := database.GetRoleIdsForGuild(guildId)
+
+	if len(roleIds) == 0 {
+		log.Printf("There is no role id associated with guild '%s'! This should never happen!\n", guildId)
+		panic(&GetGuildRolePairError{})
+	}
+
+	return roleIds[0]
 }
 
 func (database *DatabaseType) GetAllGuildRolePairs() (guildRoleMap map[string]string) {

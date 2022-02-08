@@ -22,11 +22,11 @@ func CheckIfUserBusy(database *persist.DatabaseType, discord *discordgo.Session,
 
 	// Statuses of the user before the current check
 	alreadyHasRole, _ := utils.StringInSlice(discordUser.Roles, roleId)
-
-	// Add role back if necessary
 	userBusyTimes := database.GetBusyTimesForUser(user.Id)
 
 	var busyWith string
+
+	log.Printf("\tChecking user %s with busy times %d", user.Name, len(userBusyTimes))
 
 	for _, busyTime := range userBusyTimes {
 		now := time.Now()
@@ -61,14 +61,11 @@ func CheckIfUserBusy(database *persist.DatabaseType, discord *discordgo.Session,
 
 func UpdateSingleGuild(database *persist.DatabaseType, discord *discordgo.Session, guildId string) {
 	users := database.GetUsersInGuild(guildId)
-	log.Printf("Updating roles for guild %s and users %d\n", guildId, len(users))
+	log.Printf("Updating roles for guild '%s' and users: %d\n", guildId, len(users))
 
 	// For each user with a ID in the `users` map, change their role for the current time
 	for _, user := range users {
 		if user.BelongsTo == guildId {
-			log.Printf("\tChecking user %s", user.Name)
-
-			// Check if the user should change busy status
 			CheckIfUserBusy(database, discord, user, guildId)
 		} else {
 			log.Printf("This shouldn't happen! User %s has guildId %s but should have %s.\n", user.Name, user.BelongsTo, guildId)

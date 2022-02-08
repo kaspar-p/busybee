@@ -46,11 +46,7 @@ func HandleWyd(database *persist.DatabaseType, discord *discordgo.Session, messa
 	mentionedId := message.Mentions[0].ID
 
 	if mentionedId == discord.State.User.ID {
-		log.Println("Asked the bot wyd!")
-
-		err = SendSingleMessage(discord, message.ChannelID, "nothing much \\;)")
-
-		return err
+		return TalkToBusyBee(discord, message, "wyd")
 	}
 
 	user, userExists := database.GetUser(message.GuildID, mentionedId)

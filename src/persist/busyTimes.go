@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/kaspar-p/busybee/src/entities"
+	"github.com/kaspar-p/busybee/src/utils"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -43,7 +44,7 @@ func GetAndConvertTimeFromDocument(result bson.M, key string) time.Time {
 		log.Printf("Interface time with name %s and value %v is not convertible to primitive.Datetime!", key, interfaceTime)
 		panic(&GetBusyTimeError{})
 	} else {
-		resultTime = interfaceTime.Time()
+		resultTime = interfaceTime.Time().In(utils.GetTz())
 	}
 
 	return resultTime

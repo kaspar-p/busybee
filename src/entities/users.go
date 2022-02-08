@@ -58,9 +58,10 @@ func (user *User) IsBusy(t time.Time) bool {
 }
 
 func (user *User) GetTodaysEvents() []*BusyTime {
+	location := utils.GetTz()
 	year, month, day := utils.GetNow().Date()
-	beginningOfDay := time.Date(year, month, day, 0, 0, 0, 0, time.Local)
-	endOfDay := time.Date(year, month, day, 23, 59, 59, 0, time.Local)
+	beginningOfDay := time.Date(year, month, day, 0, 0, 0, 0, location)
+	endOfDay := time.Date(year, month, day, 23, 59, 59, 0, location)
 
 	todaysEvents := make([]*BusyTime, 0)
 

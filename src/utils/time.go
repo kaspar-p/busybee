@@ -3,9 +3,11 @@ package utils
 import "time"
 
 func GetNow() time.Time {
+	return time.Now().In(GetTz())
+}
+
+func GetTz() *time.Location {
 	loc, _ := time.LoadLocation("America/New_York")
 
-	now := time.Now().In(loc)
-
-	return now
+	return loc
 }

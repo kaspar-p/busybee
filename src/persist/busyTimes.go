@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/kaspar-p/busybee/src/entities"
-	"github.com/kaspar-p/busybee/src/utils"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -31,7 +30,7 @@ func GetStringValueFromDocument(result bson.M, key string) string {
 	return resultString
 }
 
-func GetAndConvertTimeFromDocument(result bson.M, key string) time.Time {
+func GetAndConvertTimeFromDocument(result bson.M, key, timezone string) time.Time {
 	var resultTime time.Time
 
 	interfaceTime, found := result[key]
@@ -44,18 +43,20 @@ func GetAndConvertTimeFromDocument(result bson.M, key string) time.Time {
 		log.Printf("Interface time with name %s and value %v is not convertible to primitive.Datetime!", key, interfaceTime)
 		panic(&GetBusyTimeError{})
 	} else {
-		resultTime = interfaceTime.Time().In(utils.GetTz())
+		location, _ := time.LoadLocation(timezone)
+		resultTime = interfaceTime.Time().In(location)
 	}
 
 	return resultTime
 }
 
 func CreateBusyTimeFromResult(result bson.M) entities.BusyTime {
+	timezone := GetStringValueFromDocument(result, "TimeZone")
 	guildId := GetStringValueFromDocument(result, "BelongsTo")
 	ownerId := GetStringValueFromDocument(result, "OwnerId")
 	title := GetStringValueFromDocument(result, "Title")
-	startTime := GetAndConvertTimeFromDocument(result, "Start")
-	endTime := GetAndConvertTimeFromDocument(result, "End")
+	startTime := GetAndConvertTimeFromDocument(result, "Start", timezone)
+	endTime := GetAndConvertTimeFromDocument(result, "End", timezone)
 
 	// Create new busyTime
 	newBusyTime := entities.CreateBusyTime(ownerId, guildId, title, startTime, endTime)

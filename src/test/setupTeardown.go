@@ -1,6 +1,7 @@
 package test
 
 import (
+	"github.com/bwmarrin/discordgo"
 	discordLib "github.com/kaspar-p/busybee/src/discord"
 	"github.com/kaspar-p/busybee/src/environment"
 	"github.com/kaspar-p/busybee/src/persist"
@@ -23,9 +24,18 @@ func SetupIntegrationTest() TeardownFunction {
 	config := environment.InitializeViper(environment.TESTING)
 
 	db, disconnect := persist.InitializeDatabase(config.DatabaseConfig)
-	discordLib.EstablishDiscordConnection(db, config.DiscordConfig)
+	_, closeDiscord := discordLib.EstablishDiscordConnection(db, config.DiscordConfig)
 
-	return Teardown(disconnect)
+	return Teardown(disconnect, closeDiscord)
+}
+
+func SetupDiscordRequiredTests() (s *discordgo.Session, td TeardownFunction) {
+	config := environment.InitializeViper(environment.TESTING)
+
+	db, disconnect := persist.InitializeDatabase(config.DatabaseConfig)
+	discord, closeDiscord := discordLib.EstablishDiscordConnection(db, config.DiscordConfig)
+
+	return discord, Teardown(disconnect, closeDiscord)
 }
 
 func SetupDatabaseRequiredTests() (database *persist.DatabaseType, td TeardownFunction) {

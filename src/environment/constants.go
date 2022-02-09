@@ -3,6 +3,8 @@ package environment
 import (
 	"log"
 	"os"
+	"os/exec"
+	"strings"
 
 	"github.com/kaspar-p/busybee/src/discord"
 	"github.com/kaspar-p/busybee/src/persist"
@@ -10,6 +12,7 @@ import (
 )
 
 type Config struct {
+	TestingConfig  *discord.DiscordConfig
 	DiscordConfig  *discord.DiscordConfig
 	DatabaseConfig *persist.DatabaseConfig
 }
@@ -33,12 +36,22 @@ func DecideMode() Mode {
 	return mode
 }
 
+// Gets the path of the first directory with a .git/ directory in it. This should be the project root.
+func getProjectRootPath() string {
+	cmdOut, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+	if err != nil {
+		log.Panic("Error getting project root directory: ", err)
+	}
+
+	return strings.TrimSpace(string(cmdOut))
+}
+
 func InitializeViper(mode Mode) *Config {
 	if mode == PRODUCTION {
 		viper.AutomaticEnv()
 	} else {
 		viper.SetConfigName(mode.ConfigFile())
-		viper.AddConfigPath(".")
+		viper.AddConfigPath(getProjectRootPath())
 		viper.SetConfigType("yml")
 
 		err := viper.ReadInConfig()
@@ -47,7 +60,7 @@ func InitializeViper(mode Mode) *Config {
 		}
 	}
 
-	return &Config{
+	config := &Config{
 		DiscordConfig: &discord.DiscordConfig{
 			BotToken: viper.GetString("BUSYBEE_BOT.TOKEN"),
 			AppId:    viper.GetString("BUSYBEE_BOT.APP_ID"),
@@ -62,4 +75,13 @@ func InitializeViper(mode Mode) *Config {
 			},
 		},
 	}
+
+	if mode == TESTING {
+		config.TestingConfig = &discord.DiscordConfig{
+			BotToken: viper.GetString("GOURD_BOT.TOKEN"),
+			AppId:    viper.GetString("GOURD_BOT.APP_ID"),
+		}
+	}
+
+	return config
 }

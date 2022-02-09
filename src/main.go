@@ -16,7 +16,7 @@ func main() {
 	// Initialize constants
 	log.Println("Initializing constants and globals.")
 
-	// Check for if in heroku
+	// Check for if in Heroku
 	mode := environment.DecideMode()
 	config := environment.InitializeViper(mode)
 

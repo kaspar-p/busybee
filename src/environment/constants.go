@@ -47,39 +47,28 @@ func getProjectRootPath() string {
 }
 
 func InitializeViper(mode Mode) *Config {
-	if mode == PRODUCTION {
-		viper.AutomaticEnv()
-	} else {
-		viper.SetConfigName(mode.ConfigFile())
-		viper.AddConfigPath(getProjectRootPath())
-		viper.SetConfigType("yml")
-
-		err := viper.ReadInConfig()
-		if err != nil {
-			log.Panic("Error reading from environment variables file: ", err)
-		}
-	}
+	mode.ConfigureEnvironmentVariables()
 
 	config := &Config{
 		DiscordConfig: &discord.DiscordConfig{
-			BotToken: viper.GetString("BUSYBEE_BOT.TOKEN"),
-			AppId:    viper.GetString("BUSYBEE_BOT.APP_ID"),
+			BotToken: viper.GetString("BUSYBEE_BOT__TOKEN"),
+			AppId:    viper.GetString("BUSYBEE_BOT__APP_ID"),
 		},
 		DatabaseConfig: &persist.DatabaseConfig{
-			ConnectionUrl: viper.GetString("MONGO_DB.CONNECTION_URL"),
-			DatabaseName:  viper.GetString("MONGO_DB.DATABASE_NAME"),
+			ConnectionUrl: viper.GetString("MONGO_DB__CONNECTION_URL"),
+			DatabaseName:  viper.GetString("MONGO_DB__DATABASE_NAME"),
 			CollectionNames: &persist.CollectionNames{
-				Users:     viper.GetString("MONGO_DB.COLLECTIONS.USERS_NAME"),
-				BusyTimes: viper.GetString("MONGO_DB.COLLECTIONS.BUSYTIMES_NAME"),
-				Guilds:    viper.GetString("MONGO_DB.COLLECTIONS.GUILDS_NAME"),
+				Users:     viper.GetString("MONGO_DB__COLLECTIONS__USERS_NAME"),
+				BusyTimes: viper.GetString("MONGO_DB__COLLECTIONS__BUSYTIMES_NAME"),
+				Guilds:    viper.GetString("MONGO_DB__COLLECTIONS__GUILDS_NAME"),
 			},
 		},
 	}
 
-	if mode == TESTING {
+	if mode.IsTesting() {
 		config.TestingConfig = &discord.DiscordConfig{
-			BotToken: viper.GetString("GOURD_BOT.TOKEN"),
-			AppId:    viper.GetString("GOURD_BOT.APP_ID"),
+			BotToken: viper.GetString("GOURD_BOT__TOKEN"),
+			AppId:    viper.GetString("GOURD_BOT__APP_ID"),
 		}
 	}
 

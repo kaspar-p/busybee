@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/kaspar-p/busybee/src/environment"
@@ -8,11 +9,14 @@ import (
 	"github.com/kaspar-p/gourd"
 )
 
-func TestWydTalkToBot(t *testing.T) {
-	t.Parallel()
+var (
+	tester gourd.Tester
+	config *environment.Config
+)
 
+func TestMain(m *testing.M) {
 	_, teardown := test.SetupDiscordRequiredTests()
-	config := environment.InitializeViper(environment.TESTING)
+	config = environment.InitializeViper(environment.TESTING)
 
 	gourdConfig := gourd.Config{
 		AppId:       config.TestingConfig.AppId,
@@ -20,30 +24,23 @@ func TestWydTalkToBot(t *testing.T) {
 		TestChannel: "938447408923299890",
 		TestingBot:  config.DiscordConfig.AppId,
 	}
-	tester, disconnect := gourd.CreateTester(gourdConfig)
 
-	tester.ExpectSending(".wyd <@" + config.DiscordConfig.AppId + ">").ToReturn("nothing much \\;)")
+	var disconnect func()
+	tester, disconnect = gourd.CreateTester(gourdConfig)
+
+	code := m.Run()
 
 	disconnect()
 	teardown()
+
+	os.Exit(code)
+}
+
+func TestWydTalkToBot(t *testing.T) {
+	tester.ExpectSending(".wyd <@" + config.DiscordConfig.AppId + ">").ToReturn("nothing much \\;)")
+	tester.ExpectSending(".wyd").ToContain("@ of a user")
 }
 
 func TestWydNoArgs(t *testing.T) {
-	t.Parallel()
-
-	_, teardown := test.SetupDiscordRequiredTests()
-	config := environment.InitializeViper(environment.TESTING)
-
-	gourdConfig := gourd.Config{
-		AppId:       config.TestingConfig.AppId,
-		BotToken:    config.TestingConfig.BotToken,
-		TestChannel: "938447408923299890",
-		TestingBot:  config.DiscordConfig.AppId,
-	}
-	tester, disconnect := gourd.CreateTester(gourdConfig)
-
-	tester.ExpectSending(".wyd").ToReturn("command must have a single argument of the @ of a user \\:)")
-
-	disconnect()
-	teardown()
+	tester.ExpectSending(".wyd").ToContain("@ of a user \\:)")
 }

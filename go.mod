@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/apognu/gocal v0.9.0
 	github.com/bwmarrin/discordgo v0.23.2
-	github.com/kaspar-p/gourd v0.0.0-20220208195610-d7f59b829658
+	github.com/kaspar-p/gourd v0.0.0-20220210000321-872394926c32
 	github.com/pkg/errors v0.9.1
 	github.com/robfig/cron v1.2.0
 	github.com/spf13/viper v1.10.1

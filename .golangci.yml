@@ -44,5 +44,6 @@ linters:
     - ifshort
     - gochecknoglobals
     - revive
+    - paralleltest
 run:
   issues-exit-code: 1
